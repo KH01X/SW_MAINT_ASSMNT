@@ -2,13 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package Legacy;
+package ModernizeSystem;
 
 /**
- *
+ * THERE IS MODIFIED AND ADDED
  * @author admin
  */
-public class AccountWallet {
+public class AccountWallet implements IPaymentMethod { //MODIFIED
     protected String walletID;
     protected double walletAmount;
     
@@ -63,5 +63,27 @@ public class AccountWallet {
     public void increase(double amount)
     {
         this.walletAmount += amount;
+    }
+
+    // ADDED/MODIFIED: Implementing the core payment processing function
+    @Override
+    public boolean processPayment(double total, Order order, AccountWallet wallet, Credit credit)
+    {
+        // Encapsulating the core business rule (Sufficient Funds Check)
+        if (wallet.checkBalance() >= total)
+        {
+            wallet.decrease(total); // Update the state
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    // ADDED: Implementing the method name accessor
+    @Override
+    public String getMethodName() {
+        return "Account Wallet";
     }
 }

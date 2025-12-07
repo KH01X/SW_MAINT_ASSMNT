@@ -2,14 +2,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package Legacy;
+package ModernizeSystem;
 
 /**
- *
+ * THERE IS MODIFIED AND ADDED
  * @author admin
  */
 
-public class Credit {
+public class Credit implements IPaymentMethod {
     private String number;
     private String type;
     private String expDate;
@@ -58,6 +58,24 @@ public class Credit {
         if (!expDate.equalsIgnoreCase(expDateInput)) return false;
         
         else return true;
+    }
+
+    // ADDED: Implementing the core payment processing function
+    @Override
+    public boolean processPayment(double total, Order order, AccountWallet wallet, Credit credit) {
+        // In the absence of a real payment gateway, we authorize if the card details
+        // have been successfully entered and stored in the object.
+        if (this.number != null && !this.number.isEmpty()) {
+            // Assume external bank is successfully charged.
+            return true;
+        }
+        return false;
+    }
+
+    // ADDED: Implementing the method name accessor
+    @Override
+    public String getMethodName() {
+        return "Credit Card";
     }
     
 }

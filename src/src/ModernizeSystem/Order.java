@@ -2,10 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package Legacy;
+package ModernizeSystem;
 
 /**
- *
+ * THERE IS MODIFIED AND ADDED
  * @author admin
  */
 import java.text.SimpleDateFormat;  
@@ -34,20 +34,28 @@ public class Order {
         this.orderDate = date;
         numOrderID++;
     }
-    //USE FOR CALCULATING THE PRICE IN MAIN
-    public void calculateFinal(double cartTotal)
+
+    /**
+     * USE FOR CALCULATING THE PRICE IN MAIN
+     * MODIFIED/ADDED: New cohesive method for calculation (SRP: Calculation)
+     */
+
+    public void calculateTaxAndTotal()
     {
-        this.total = cartTotal + (cartTotal * tax /100);
+        // Responsibility 1 (Calculation Logic): Determines tax and final total.
+        this.taxPrice = this.subTotal * tax / 100.0; // Calculate 5% tax
+        this.total = this.subTotal + this.taxPrice;  // Calculate final total
     }
-    public void calculateTax(double cartTotal)
-    {
-        this.taxPrice = cartTotal * tax /100;
-    }
+
+    // REMOVED: The old calculateFinal(double) and calculateTax(double) methods.
     public double getTotal(){
         return total;
     }
     public double getSubTotal(){
         return subTotal;
+    }
+    public double getTaxPrice(){ // Added accessor for tax price
+        return taxPrice;
     }
     //Functions
     
