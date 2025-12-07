@@ -1,0 +1,6 @@
+C1000|pass0|Emy@gmail.com
+C1001|pass1|Amy@gmail.com
+C1002|pass2|man@email.com
+C1003|pass3|good@mail.com
+C1004|pass4|pass4@mail.com
+C1005|pass5|pass5@mail.com
