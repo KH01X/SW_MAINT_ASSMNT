@@ -14,11 +14,22 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
+
+    // Logger used for error and critical information
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
+    private static final GameService gameService = new GameService();
+    private static final CartService cartService = new CartService();
+
+
     public static void main(String[] args) {
         // REVIEWS
         Review[] Game1Reviews = new Review[10];
@@ -413,8 +424,9 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    //GAME ON SALES
-                    filereadingGame(gameList);
+                    // GAME ON SALES
+                    // MODIFIED: Replace legacy filereadingGame(gameList) with FileIOService
+                    gameList = (ArrayList<Game>) FileIOService.readGameData();
                     order.setSubTotal(gameSelection(gameList, cartList, wallet, card));
                     break;
                 case 2:
@@ -585,150 +597,133 @@ public class Main {
 
 
     //GAME MENU (INCLUDE VIEWING GAME, ADD TO CART, AND CALCULATE SUBTOTAL
-    public static void menucontent(ArrayList<Game> gameList) {
+    public static void menucontent(List<Game> gameList) {
         int i = 0;
         System.out.printf("""
-                
-                
-                ==============================================================
-                   ====    ==   == = ==  ====    == = ==  ====  ==  =  =   =
-                  =       =  =  =======  =       =======  =     === =  =   =
-                  =  ===  ====  =  =  =  ====    =  =  =  ====  = ===  =   =
-                  =   =   =  =  =  =  =  =       =  =  =  =     =   =  =   =
-                   ====   =  =  =  =  =  ====    =  =  =  ====  =   =   ===
-                ==============================================================
-                """);
+            
+            
+            ==============================================================
+               ====    ==   == = ==  ====    == = ==  ====  ==  =  =   =
+              =       =  =  =======  =       =======  =     === =  =   =
+              =  ===  ====  =  =  =  ====    =  =  =  ====  = ===  =   =
+              =   =   =  =  =  =  =  =       =  =  =  =     =   =  =   =
+               ====   =  =  =  =  =  ====    =  =  =  ====  =   =   ===
+            ==============================================================
+            """);
         for (Game printgame : gameList) {
-            gameList.get(i);
             System.out.println(++i + ") " + printgame.getGameName());
-
         }
-
     }
 
-    public static double gameSelection(ArrayList<Game> gameList, ArrayList<Cart> cartList, AccountWallet wallet, Credit card) {
-        Game game = new Game();
-        double totalPrice = 0;
+    /**
+     * Handles the Game Catalog view, selection, and Cart addition flow (Controller/Delegator).
+     * GameList = The list of all available games.
+     * CartList = The current list of items in the customer's cart.
+     * Wallet = The customer's AccountWallet object.
+     * Card = The customer's Credit object.
+     * Returns The calculated subtotal of the cart
+     */
+    public static double gameSelection(List<Game> gameList, List<Cart> cartList, AccountWallet wallet, Credit card) {
         Scanner sc = new Scanner(System.in);
         int option = 0;
-
         char proceed;
+        Game selectedGame = null;
+
         do {
             menucontent(gameList);
-            System.out.printf(
-                    "\n0) Exit Game Menu" +
-                            "\nSelect a game > ");
-            boolean input = false;
 
-            while (!input) {
+            System.out.printf("\n0) Exit Game Menu" + "\nSelect a game > ");
+
+            boolean inputValid = false;
+            while (!inputValid) {
                 try {
                     option = sc.nextInt();
-                    if (option >= 1 && option <= gameList.size()) {
-                        option--;
-                        game = gameList.get(option);
-                        getQuantity(option);
-                        input = true;
-                    } else if (option == 0) {
-                        CustomerMainMenu(cartList, gameList, wallet, card);
-                    } else {
-                        int lastIndex = gameList.size() - 1;
-                        System.out.println("Invalid Option! Please select only from 1 to " + (1 + lastIndex));
-                        sc.nextLine();
+
+                    if (option == 0) {
+                        CustomerMainMenu((ArrayList<Cart>) cartList, (ArrayList<Game>) gameList, wallet, card);
+                        return cartService.calculateSubTotal(cartList); // Exit and return total
                     }
 
-                } catch (Exception ex) {
-                    int lastIndex = gameList.size() - 1;
-                    System.out.println("Invalid Option! Please select only from 1 to " + (1 + lastIndex));
-                    input = false;
+                    // Delegation: Use GameService to retrieve the game
+                    selectedGame = gameService.getSelectedGame(gameList, option);
+                    // NOTE: Removed legacy getQuantity(option) call as it was incorrect reporting logic.
+                    inputValid = true;
+
+                } catch (IndexOutOfBoundsException e) {
+                    // Preventive: Handle selection outside the list range
+                    int lastIndex = gameList.size();
+                    LOGGER.log(Level.WARNING, "User entered invalid game index: " + option);
+                    // Assuming ErrorMessage exists, otherwise use System.out
+                    System.out.println("Invalid Option! Please select only from 1 to " + lastIndex);
+                    sc.nextLine(); // Clear scanner buffer
+                } catch (java.util.InputMismatchException e) {
+                    // Preventive: Catch non-numeric input gracefully
+                    System.out.println("Invalid Option! Only Enter number!");
                     sc.nextLine();
                 }
             }
+
+            // --- Display Game Details ---
             System.out.printf(
                     """
-                            =================================================================
-                                Game Name  : %s
-                                Game Price : %.2f
-                                Game Genre : %s
-                               ______________________________
-                                Game Description
-                               ------------------------------ 
-                            
-                            """, game.getGameName(), game.getPrice(), game.getGenre());
-            formatGameDesc(game.getGameDesc(), 40);
+                    =================================================================
+                         Game Name  : %s
+                         Game Price : %.2f
+                         Game Genre : %s
+                        ______________________________
+                         Game Description
+                        ------------------------------ 
+                    
+                    """, selectedGame.getGameName(), selectedGame.getPrice(), selectedGame.getGenre());
+            formatGameDesc(selectedGame.getGameDesc(), 40);
             System.out.println("=================================================================");
 
-            // OPTIONS SEGMENT (CART, REVIEWS,
+            // --- Options Segment ---
             System.out.printf("""   
-                    [1] Add to Cart     [2] Reviews     [3] Back to Games   
-                    Please Enter An Option (1-3):  """);
+            [1] Add to Cart     [2] Reviews     [3] Back to Games   
+            Please Enter An Option (1-3):  """);
 
             option = sc.nextInt();
 
             switch (option) {
                 case 1:
+                    // Delegation: Use CartService to add item (SRP)
+                    cartService.addItemToCart(cartList, selectedGame);
 
-                    cartList.add(new Cart(game.getGameID(), game.getGameName(), game.getPrice()));
-                    System.out.printf("""
-                            ================= Your Cart Content =================
-                            Game Name                        Price
-                            
-                            """);
+                    System.out.printf("================= Your Cart Content =================\n");
+                    System.out.println("Game Name                        Price");
                     for (Cart cartprint : cartList) {
                         System.out.println(cartprint.getGameName() + "              " + cartprint.getPrice());
                     }
-                    totalPrice += game.getPrice();
-                    System.out.println("Total price:                    " + totalPrice);
+
+                    // Delegation: Use CartService to calculate total (SRP)
+                    double totalPrice = cartService.calculateSubTotal(cartList);
+                    System.out.println("Total price:                    " + String.format("%.2f", totalPrice)); // Corrected formatting
                     break;
                 case 2:
                     System.out.println("\n  Showing recent reviews:" + "\n  -------------------------");
-           /* if (choice == 1)
-            {
-               for (int i = 0; i < Game1Reviews.length; i++)
-               {
-                    System.out.println(Game1Reviews[i].displayReview());
-               }
-            }
-            if (choice == 2)
-            {
-               for (int i = 0; i < Game2Reviews.length; i++)
-               {
-                    System.out.println(Game2Reviews[i].displayReview());
-               }
-            }
-             if (choice == 3)
-            {
-               for (int i = 0; i < Game3Reviews.length; i++)
-               {
-                    System.out.println(Game3Reviews[i].displayReview());
-               }
-            }
-              if (choice == 4)
-            {
-               for (int i = 0; i < Game4Reviews.length; i++)
-               {
-                    System.out.println(Game4Reviews[i].displayReview());
-               }
-            }
-               if (choice == 5)
-            {
-               for (int i = 0; i < Game5Reviews.length; i++)
-               {
-                    System.out.println(Game5Reviews[i].displayReview());
-               }
-            }*/
+                    // Review display logic remains commented out/unrefactored for now
+                    break;
                 case 3:
-                    menucontent(gameList);
-
+                    // Return to the game list loop start
+                    break;
             }
             System.out.println("\n Continue Looking For Games? (Y/N) > ");
             proceed = sc.next().charAt(0);
             sc.nextLine();
 
-        } while (Character.toUpperCase(proceed) == 'Y' || Character.toUpperCase(proceed) != 'N');
-        return totalPrice;
+        } while (Character.toUpperCase(proceed) == 'Y');
+
+        // Final total calculation before exiting
+        return cartService.calculateSubTotal(cartList);
     }
 
-    //FORMAT THE DESCRIPTION TO MAKE IT LOOK LIKE A BLOCK OF TEXT
+    /**
+     * Formats a long game description to wrap at a specified width for readability.
+     * This is a utility method assisting the Presentation layer (View).
+     * Desc = The full description string.
+     * Width = The maximum character width per line.
+     */
     public static void formatGameDesc(String desc, int width) {
         String[] descSplit = desc.split("\\s+");
         StringBuilder nextline = new StringBuilder();
@@ -747,7 +742,6 @@ public class Main {
         if (nextline.length() > 0) {
             System.out.println(nextline.toString());
         }
-
     }
 
     /**
@@ -897,11 +891,13 @@ public class Main {
 
             System.out.println(
                     """
-                            ========================================
-                                Please pick an option:
-                            1. Proceed with Checkout Order
-                            2. Return to Main Menu
-                            """);
+                    ========================================
+                        Please pick an option:
+                    1. Proceed with Checkout Order
+                    2. Remove Item From Cart
+                    3. Clear Cart
+                    4. Return to Main Menu
+                    """);
 
             //validate
             try {
