@@ -4,3 +4,6 @@ C1002|pass2|man@email.com
 C1003|pass3|good@mail.com
 C1004|pass4|pass4@mail.com
 C1005|pass5|pass5@mail.com
+C1006|123456|ethan@gmail.com
+C1007|123456|ethant@gmail.com
+C1008|1234|ethante@gmail.com

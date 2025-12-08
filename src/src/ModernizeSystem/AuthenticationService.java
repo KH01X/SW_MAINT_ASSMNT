@@ -1,64 +1,78 @@
 package ModernizeSystem;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Service responsible for user login, identification, and validation.
  */
 public class AuthenticationService {
 
-    private static final Logger LOGGER = Logger.getLogger(AuthenticationService.class.getName());
+    private final CustomerRepository customerRepository;
 
-    // NOTE: In a modern system, this dependency would be injected.
-    private final FileIOService fileIOService = new FileIOService();
+    public AuthenticationService() {
+        this(new FileCustomerRepository());
+    }
+
+    public AuthenticationService(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
+    }
 
     /**
      * Attempts to log a user in by checking credentials against stored data.
-     * @param userID The ID entered by the user.
-     * @param password The password entered by the user.
-     * @return The authenticated User object (Staff or Customer).
-     * @throws SecurityException if authentication fails (user not found or wrong password).
+     * Uses GENERIC FAILURE MESSAGE so users cannot know if ID or password is wrong.
      */
     public User login(String userID, String password) throws SecurityException {
-        // 1. Determine User Type and load relevant data
-        if (userID.startsWith("S")) {
-            // Staff data is hardcoded (legacy structure, refactor later)
+
+        if (userID == null || userID.isBlank() ||
+                password == null || password.isBlank()) {
+
+            throw new SecurityException("Invalid ID or Password.");
+        }
+
+        String normalizedId = userID.trim();
+        String normalizedPassword = password.trim();
+
+        // STAFF LOGIN
+        if (normalizedId.startsWith("S")) {
             List<Staff> staffList = loadStaffData();
-            return authenticate(staffList, userID, password, "Staff");
-        } else if (userID.startsWith("C")) {
-            // Customer data is read via I/O Service (SRP)
-            List<Customer> customerList = fileIOService.readCustomerData();
-            return authenticate(customerList, userID, password, "Customer");
-        } else {
-            LOGGER.log(Level.WARNING, "Login attempt with invalid ID format: " + userID);
-            throw new SecurityException(ErrorMessage.INVALID_ID);
+            return authenticate(staffList, normalizedId, normalizedPassword);
+        }
+
+        // CUSTOMER LOGIN
+        else if (normalizedId.startsWith("C")) {
+            List<Customer> customerList = customerRepository.findAll();
+            return authenticate(customerList, normalizedId, normalizedPassword);
+        }
+
+        // INVALID FORMAT — ALWAYS generic error
+        else {
+            throw new SecurityException("Invalid ID or Password.");
         }
     }
 
     /**
-     * Generic authentication helper to find user and validate password.
+     * Generic authentication helper using GENERIC failure messages only.
      */
-    private <T extends User> User authenticate(List<T> userList, String userID, String password, String type) throws SecurityException {
-        // Use Stream API to find the user efficiently (Requirement: Use stream to loop)
+    private <T extends User> User authenticate(List<T> userList,
+                                               String userID,
+                                               String password) throws SecurityException {
+
         Optional<T> foundUser = userList.stream()
                 .filter(user -> user.getuserID().equalsIgnoreCase(userID))
                 .findFirst();
 
         if (foundUser.isEmpty()) {
-            LOGGER.log(Level.INFO, type + " ID not found: " + userID);
-            throw new SecurityException(ErrorMessage.INVALID_ID);
+            throw new SecurityException("Invalid ID or Password.");
         }
 
         User user = foundUser.get();
+
         if (!user.getuserPw().equals(password)) {
-            LOGGER.log(Level.WARNING, type + " login failed for ID: " + userID);
-            throw new SecurityException(ErrorMessage.WRONG_PASSWORD);
+            throw new SecurityException("Invalid ID or Password.");
         }
 
-        // Success
         System.out.println(ErrorMessage.LOGIN_SUCCESS);
         return user;
     }
@@ -67,7 +81,6 @@ public class AuthenticationService {
      * TEMPORARY: Loads hardcoded staff data to avoid external dependency.
      */
     private List<Staff> loadStaffData() {
-        // NOTE: Uses List instead of fixed array (Requirement: Use list instead of array [])
         List<Staff> staffList = new ArrayList<>();
         staffList.add(new Staff("S1000", "staff0", "S1000@mail.com"));
         staffList.add(new Staff("S1001", "staff1", "S1001@mail.com"));
@@ -80,7 +93,5 @@ public class AuthenticationService {
         staffList.add(new Staff("S1008", "staff8", "S1008@mail.com"));
         staffList.add(new Staff("S1009", "staff9", "S1009@mail.com"));
         return staffList;
-
-
     }
 }

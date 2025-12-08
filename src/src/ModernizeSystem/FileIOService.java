@@ -19,21 +19,23 @@ public class FileIOService {
 
     private static final Logger LOGGER = Logger.getLogger(FileIOService.class.getName());
     private static final String GAME_FILE = "available_games.txt";
+    private static final CustomerRepository CUSTOMER_REPOSITORY = new FileCustomerRepository();
 
     // --- Customer Data I/O (Required for Authentication Team) ---
     // NOTE: These methods would be fully implemented by the team member responsible for 1.0/2.0
 
     public static List<Customer> readCustomerData() {
-        // Placeholder: Actual implementation uses file reading logic for cusData.txt
-        // Return an empty list or throw an exception if the file is not found.
-        LOGGER.log(Level.INFO, "Delegating customer data read to FileIOService.");
-        return new ArrayList<>();
+        return new ArrayList<>(CUSTOMER_REPOSITORY.findAll());
     }
 
     public static boolean writeCustomer(Customer customer) {
-        // Placeholder: Actual implementation uses file writing logic for cusData.txt
-        LOGGER.log(Level.INFO, "Delegating customer data write to FileIOService.");
-        return true;
+        try {
+            CUSTOMER_REPOSITORY.save(customer);
+            return true;
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.SEVERE, "Unable to persist customer", ex);
+            return false;
+        }
     }
 
     // --- Game Data I/O (Required for your 5.0/6.0 Module) ---
