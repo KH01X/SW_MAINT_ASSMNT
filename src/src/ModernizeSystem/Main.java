@@ -867,26 +867,39 @@ public class Main {
         return matcher.matches();
     }
 
-    public static void CartMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card, double total) {
-        Game game = new Game();
+    // Updated Cartmenu
+    public static void CartMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card, double subTotal) {
         boolean valid = false;
         Scanner sc = new Scanner(System.in);
         int choice = 0;
 
+        // Calculate total price including tax for display
+        Order tempOrder = new Order();
+        tempOrder.setSubTotal(subTotal);
+        tempOrder.calculateTaxAndTotal();
+        double total = tempOrder.getTotal();
+
         do {
             System.out.println(
                     """
-                            ========================================
-                                  o====-  __    __   |
-                                  |      |__|  [    =|== 
-                                  o====o |  |  [     |_
-                            ========================================
-                              Displaying Cart:
-                             Name                           Price
-                            """);
-            // do your cart thing here !!
-            for (Cart cartprint : cartList) {
-                System.out.println(cartprint.getGameName() + "              " + cartprint.getPrice());
+                    ========================================
+                          o====-  __    __   |
+                          |      |__|  [    =|== 
+                          o====o |  |  [     |_
+                    ========================================
+                      Displaying Cart:
+                    """);
+
+            // Display cart contents
+            if (cartList.isEmpty()) {
+                System.out.println("       [ Cart is currently empty ]");
+            } else {
+                System.out.println(" Name                           Price");
+                for (Cart cartprint : cartList) {
+                    System.out.printf("%-30s %.2f\n", cartprint.getGameName(), cartprint.getPrice());
+                }
+                System.out.println("----------------------------------------");
+                System.out.printf(" Total Price:                     %.2f\n", total);
             }
 
             System.out.println(
@@ -899,31 +912,64 @@ public class Main {
                     4. Return to Main Menu
                     """);
 
-            //validate
+            //validate (MODIFIED: Range changed from 1-2 to 1-4)
             try {
                 choice = sc.nextInt();
 
-                if (choice < 1 || choice > 2) {
+                if (choice < 1 || choice > 4) {
                     valid = false;
-                    System.out.println("Enter value is not in range with the option!");
-                    System.out.println("Only enter number from 1 - 2 !");
-                } else
+                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
+                } else {
                     valid = true;
+                }
             } catch (Exception ex) {
                 valid = false;
                 sc.nextLine();
-                System.out.println("Only Enter number!");
+                System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
             }
         } while (valid == false);
 
         //choice
         switch (choice) {
             case 1:
-                PaymentMenu(cartList, gameList, wallet, card, total);
+                if (cartList.isEmpty()) {
+                    System.out.println("Cannot proceed to payment. Cart is empty!");
+                    CartMenu(cartList, gameList, wallet, card, subTotal);
+                } else {
+                    PaymentMenu(cartList, gameList, wallet, card, total);
+                }
                 break;
             case 2:
+                // Delegates to the new helper function
+                removeItemView(cartList);
+                // Recalculate and re-display
+                CartMenu(cartList, gameList, wallet, card, cartService.calculateSubTotal(cartList));
+                break;
+            case 3:
+                // Delegates to CartService (SRP)
+                cartService.clearCart(cartList);
+                System.out.println("\n[ Cart has been cleared! ]\n");
+                // Recalculate and re-display
+                CartMenu(cartList, gameList, wallet, card, 0.0);
+                break;
+            case 4:
                 CustomerMainMenu(cartList, gameList, wallet, card);
                 break;
+        }
+    }
+
+    public static void removeItemView(List<Cart> cartList) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter the Game ID (e.g., G1001) to remove: ");
+        String idToRemove = sc.nextLine();
+
+        // Delegation: Call the CartService function (SRP)
+        boolean removed = cartService.removeItemFromCart(cartList, idToRemove);
+
+        if (removed) {
+            System.out.println("Successfully removed item with ID: " + idToRemove);
+        } else {
+            System.out.println(ErrorMessage.ITEM_NOT_FOUND); // Use Constant
         }
     }
 
