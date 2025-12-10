@@ -1,10 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package ModernizeSystem;
 
-/**
+/*
+ *
+ *
+ *
  *
  * @author admin
  */
@@ -621,6 +620,16 @@ public class Main {
      * Card = The customer's Credit object.
      * Returns The calculated subtotal of the cart
      */
+    /**
+     * Handles the Game Catalog view, selection, and Cart addition flow (Controller/Delegator).
+     * Delegates business logic to GameService and CartService (SRP).
+     *
+     * @param gameList The list of all available games.
+     * @param cartList The current list of items in the customer's cart.
+     * @param wallet The customer's AccountWallet object.
+     * @param card The customer's Credit object.
+     * @return The calculated subtotal of the cart
+     */
     public static double gameSelection(List<Game> gameList, List<Cart> cartList, AccountWallet wallet, Credit card) {
         Scanner sc = new Scanner(System.in);
         int option = 0;
@@ -638,25 +647,23 @@ public class Main {
                     option = sc.nextInt();
 
                     if (option == 0) {
+                        // Exit path delegates control back to CustomerMainMenu
                         CustomerMainMenu((ArrayList<Cart>) cartList, (ArrayList<Game>) gameList, wallet, card);
-                        return cartService.calculateSubTotal(cartList); // Exit and return total
+                        return cartService.calculateSubTotal(cartList);
                     }
 
-                    // Delegation: Use GameService to retrieve the game
+                    // Delegation: Use GameService to retrieve the game (SRP)
                     selectedGame = gameService.getSelectedGame(gameList, option);
-                    // NOTE: Removed legacy getQuantity(option) call as it was incorrect reporting logic.
                     inputValid = true;
 
                 } catch (IndexOutOfBoundsException e) {
-                    // Preventive: Handle selection outside the list range
-                    int lastIndex = gameList.size();
+                    // Preventive: Handles selection outside the list range (e.g., input 99)
                     LOGGER.log(Level.WARNING, "User entered invalid game index: " + option);
-                    // Assuming ErrorMessage exists, otherwise use System.out
-                    System.out.println("Invalid Option! Please select only from 1 to " + lastIndex);
+                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
                     sc.nextLine(); // Clear scanner buffer
                 } catch (java.util.InputMismatchException e) {
                     // Preventive: Catch non-numeric input gracefully
-                    System.out.println("Invalid Option! Only Enter number!");
+                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
                     sc.nextLine();
                 }
             }
@@ -689,6 +696,7 @@ public class Main {
                     cartService.addItemToCart(cartList, selectedGame);
 
                     System.out.printf("================= Your Cart Content =================\n");
+                    // NOTE: Display logic remains in Main/View layer
                     System.out.println("Game Name                        Price");
                     for (Cart cartprint : cartList) {
                         System.out.println(cartprint.getGameName() + "              " + cartprint.getPrice());
@@ -696,11 +704,11 @@ public class Main {
 
                     // Delegation: Use CartService to calculate total (SRP)
                     double totalPrice = cartService.calculateSubTotal(cartList);
-                    System.out.println("Total price:                    " + String.format("%.2f", totalPrice)); // Corrected formatting
+                    System.out.println("Total price:                    " + String.format("%.2f", totalPrice));
                     break;
                 case 2:
                     System.out.println("\n  Showing recent reviews:" + "\n  -------------------------");
-                    // Review display logic remains commented out/unrefactored for now
+                    // NOTE: Review display logic is currently unrefactored/commented out
                     break;
                 case 3:
                     // Return to the game list loop start
@@ -880,13 +888,13 @@ public class Main {
         do {
             System.out.println(
                     """
-                    ========================================
-                          o====-  __    __   |
-                          |      |__|  [    =|== 
-                          o====o |  |  [     |_
-                    ========================================
-                      Displaying Cart:
-                    """);
+                            ========================================
+                                  o====-  __    __   |
+                                  |      |__|  [    =|== 
+                                  o====o |  |  [     |_
+                            ========================================
+                              Displaying Cart:
+                            """);
 
             // Display cart contents
             if (cartList.isEmpty()) {
@@ -902,13 +910,13 @@ public class Main {
 
             System.out.println(
                     """
-                    ========================================
-                        Please pick an option:
-                    1. Proceed with Checkout Order
-                    2. Remove Item From Cart
-                    3. Clear Cart
-                    4. Return to Main Menu
-                    """);
+                            ========================================
+                                Please pick an option:
+                            1. Proceed with Checkout Order
+                            2. Remove Item From Cart
+                            3. Clear Cart
+                            4. Return to Main Menu
+                            """);
 
             //validate (MODIFIED: Range changed from 1-2 to 1-4)
             try {
