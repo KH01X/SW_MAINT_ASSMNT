@@ -102,11 +102,9 @@ public class Main {
 
                     break;
                 case 3:
-
-                    System.out.print("Thanks for coming!");
+                    // REPLACED: System.out.print("Thanks for coming!");
+                    System.out.print(ErrorMessage.EXIT_PROGRAM);
                     exitChoice = true;
-
-                    break;
             }
         } while (!exitChoice);
 
