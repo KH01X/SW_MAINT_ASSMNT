@@ -1,20 +1,15 @@
 package ModernizeSystem;
 
-/*
- *
- *
- *
- *
- * @author admin
- */
+import ModernizeSystem.Controller.ConsoleAuthController;
+import ModernizeSystem.Model.*;
+import ModernizeSystem.Service.*;
+import ModernizeSystem.Repository.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.logging.Level;
@@ -22,51 +17,53 @@ import java.util.logging.Logger;
 
 public class Main {
 
-    // Logger used for error and critical information
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-
     private static final GameService gameService = new GameService();
     private static final CartService cartService = new CartService();
 
-
     public static void main(String[] args) {
-        // REVIEWS
+
+        // ========== GAME REVIEWS (unchanged) ==========
         Review[] Game1Reviews = new Review[10];
         Game1Reviews[0] = new Review("Markiplier#87", "This game is lowkey amazing!");
         Game1Reviews[1] = new Review("AmogusSussy#69", "AMOGUS!");
         Game1Reviews[2] = new Review("Cool#420", "I love Mae!");
+
         Review[] Game2Reviews = new Review[10];
         Game2Reviews[0] = new Review("AloySUS#24", "Undertail is COOL");
         Game2Reviews[1] = new Review("sanslover#16", "I WANNA BANG THAT SKEELTON");
         Game2Reviews[2] = new Review("Metaton#420", "RATINGS ARE OFF THE CHARTS!");
+
         Review[] Game3Reviews = new Review[10];
         Game3Reviews[0] = new Review("HollowKnightFan#124", "Hollow Knight has been my long time favourite!");
         Game3Reviews[1] = new Review("Kevin#****", "ShAW!");
         Game3Reviews[2] = new Review("Hornet", "@Kevin#**** that's not funny");
+
         Review[] Game4Reviews = new Review[10];
         Game4Reviews[0] = new Review("PewDiePie#bro", "THIS GAME IS TRASH! :trash_bin:");
         Game4Reviews[1] = new Review("Alden Ling#132", "this game copied my name!!!");
         Game4Reviews[2] = new Review("Eiden Ring#992", "@Alden Ling#132 IKR");
+
         Review[] Game5Reviews = new Review[10];
         Game5Reviews[0] = new Review("Markus#sigma", "well, i tried");
         Game5Reviews[1] = new Review("Android#182", "I LOVE THIS GAME!");
         Game5Reviews[2] = new Review("Markiplier#87", "Hello everybody my name is Markiplier.");
 
-
-// SYSTEM STARTS HERE ===================================================== !!!!!        
-
+        // START PROGRAM
         titleScreen();
     }
 
+    // ===========================
+    //    TITLE SCREEN (UPDATED)
+    // ===========================
     public static void titleScreen() {
 
-        ArrayList<Customer> cusLogin = new ArrayList<Customer>();
-        filereadingCusData(cusLogin);
+        // NEW: Our unified Login + Register controller
+        ConsoleAuthController auth = new ConsoleAuthController();
 
         Scanner scanner = new Scanner(System.in);
-
-
         boolean exitChoice = false;
+
         do {
             System.out.println(" |<========================================================================>|");
             System.out.println(" |    ===++=== ||                  /======>>                       |  //    |");
@@ -75,202 +72,72 @@ public class Main {
             System.out.println(" |       []    ||  ||  |                  ) ||  || \\\\__||  [       | \\      |");
             System.out.println(" |       []    ||  ||  L=====      ======/  ||  ||     ||  \\\\____  |  \\\\    |");
             System.out.println(" |                                                                          |");
-            System.out.println(" |     //===>  ___,    //   ____.                      L ____________ R     |");
-            System.out.println(" |    //      /   /   //  //       /===@   L===\\\\     //         X   \\\\     |");
-            System.out.println(" |   //===   /___/   //  //       /    /  //   //    /  [ ]    Y   A   \\    |");
-            System.out.println(" |  //         //   //   \\___.  @===/   //   //     \\      _____B     /     |");
-            System.out.println(" |                                                    \\____/     \\____/     |");
             System.out.println(" |<========================================================================>|");
-
 
             System.out.println("1. REGISTER");
             System.out.println("2. LOGIN");
             System.out.println("3. EXIT");
-            System.out.println("Enter choice >");
-            int userChoice = scanner.nextInt(); //userchoice for switch
+            System.out.println("Enter choice > ");
 
-            switch (userChoice) {
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+
+                // ======================
+                //   REGISTRATION (NEW)
+                // ======================
                 case 1:
-                    System.out.println("Type exit to return to title screen");
-                    fileWritingCustomer();
+                    auth.handleRegistration();
                     break;
 
+                // ======================
+                //        LOGIN (NEW)
+                // ======================
                 case 2:
-                    // call login function
-                    chkUsrOrStf();
+                    UserModel user = auth.handleLogin();  // returns StaffModel or CustomerModel
 
+                    if (user == null) {
+                        System.out.println("Login cancelled or failed.");
+                        break;
+                    }
+
+                    // Determine role automatically
+                    if (user instanceof StaffModel) {
+                        StaffMenu();
+                    } else {
+                        CustomerMainMenu(
+                                new ArrayList<>(),
+                                new ArrayList<>(),
+                                new AccountWallet(),
+                                new Credit()
+                        );
+                    }
                     break;
+
+                // ======================
+                //        EXIT
+                // ======================
                 case 3:
-                    // REPLACED: System.out.print("Thanks for coming!");
-                    System.out.print(ErrorMessage.EXIT_PROGRAM);
+                    System.out.println("Exiting program...");
                     exitChoice = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid option!");
+                    break;
             }
+
         } while (!exitChoice);
-
-
-    } // end of main
-
-    public static void chkUsrOrStf() {
-        //Create New Account Wallet, find change for customer when they exit program
-        AccountWallet wallet = new AccountWallet();
-        //Create Credit Card
-        Credit card = new Credit();
-        ArrayList<Customer> cusLogin = new ArrayList<Customer>();
-        filereadingCusData(cusLogin);
-
-        ArrayList<Game> gameList = new ArrayList();
-        ArrayList<Cart> cartList = new ArrayList();
-
-        Scanner scanner = new Scanner(System.in);
-        int errorChecking = 0;
-        String pwHolder = "";
-        String idHolder = "";
-        User user = new Customer();
-
-        Staff[] stflogin = new Staff[10];
-        stflogin[0] = new Staff("S1000", "staff1", "S1001@mail.com");
-        stflogin[1] = new Staff("S1001", "staff2", "S1002@mail.com");
-        stflogin[2] = new Staff("S1002", "staff3", "S1003@mail.com");
-        stflogin[3] = new Staff("S1003", "staff4", "S1004@mail.com");
-        stflogin[4] = new Staff("S1004", "staff5", "S1005@mail.com");
-        stflogin[5] = new Staff("S1005", "staff6", "S1006@mail.com");
-        stflogin[6] = new Staff("S1006", "staff7", "S1007@mail.com");
-        stflogin[7] = new Staff("S1007", "staff8", "S1008@mail.com");
-        stflogin[8] = new Staff("S1008", "staff9", "S1009@mail.com");
-        stflogin[9] = new Staff("S1009", "staff10", "S1010@mail.com");
-
-        //loopings, used to loop until user types exit
-        boolean loopingMain = false;
-        boolean looping1 = false;
-        boolean looping2 = false;
-        boolean next = false;
-        boolean next2 = false;
-        do {
-            do {
-                System.out.println("Type exit to return to title screen");
-                System.out.println("Enter ID       >");
-                user.setuserID(scanner.next());
-                idHolder = user.getuserID();
-
-
-                if (idHolder.startsWith("S")) {
-                    errorChecking = 0;
-                    System.out.println("You are a Staff!");
-                    //get length of staff array
-                    int arrayLength = stflogin.length;
-                    //get id & pw
-                    for (int i = 0; i < stflogin.length; i++) {
-                        if (idHolder.equals(stflogin[i].getuserID())) {
-                            System.out.println("ID found !Staff ID > " + stflogin[i].getuserID());
-                            pwHolder = stflogin[i].getuserPw();
-                            i = arrayLength;
-                            next = true;
-
-                        } else {
-                            //counter
-                            errorChecking++;
-                        }
-                    }
-                    //go through array, if counter = arraylength while still not finding, must not exist
-                    if (errorChecking == arrayLength) {
-                        System.out.println("Error! Staff ID not found!");
-                        looping1 = true;
-
-                    }
-                    // bool to check password validity
-                    if (next == true) {
-                        looping2 = false;
-                        do {
-                            System.out.println("Enter Password >");
-                            String userInput = scanner.next();
-
-                            if (userInput.equals(pwHolder)) {
-                                System.out.println("Login Success!");
-                                loopingMain = true;
-                                looping1 = true;
-                                looping2 = true;
-                                StaffMenu();
-
-                            }// exit
-                            else if ("exit".equalsIgnoreCase(userInput) == true) {
-                                System.out.println("Returning to title screen");
-                                looping1 = true;
-                                looping2 = true;
-                            } else {
-                                System.out.println("Error ! wrong password");
-                            }
-
-
-                        } while (!looping2);
-                    }
-                } else if (idHolder.startsWith("C")) {
-                    System.out.println("You are a Customer!");
-
-                    // extract id
-                    looping2 = false;
-                    next2 = false;
-                    int errorChk2 = 0;
-                    // loop until array ends.
-                    for (Customer customer : cusLogin) {
-                        if (idHolder.equals(customer.getuserID())) {
-
-                            looping2 = true;
-                            System.out.println("ID found! Customer ID > " + customer.getuserID());
-                            pwHolder = customer.getuserPw();
-                            next2 = true;
-                            break;
-                        } else {
-                            errorChk2++;
-                        }
-                        if (errorChk2 == cusLogin.size()) {
-                            System.out.println("Error ! Customer ID not found!");
-
-                        }
-                    }
-                    if (next2 == true) {
-                        boolean passwChk2 = false;
-                        do {
-                            System.out.println("Enter Password >");
-                            String userInput2 = scanner.next();
-
-                            if (userInput2.equals(pwHolder)) {
-                                System.out.println("Login Success!");
-                                CustomerMainMenu(cartList, gameList, wallet, card);
-                                loopingMain = true;
-                                looping1 = true;
-                                passwChk2 = true;
-                            } else if ("exit".equalsIgnoreCase(userInput2) == true) {
-                                System.out.println("Returning to title screen");
-                                looping1 = true;
-                                passwChk2 = true;
-                            } else {
-                                System.out.println("Error ! wrong password");
-                            }
-
-
-                        } while (!passwChk2);
-                    }
-
-
-                } else if ("exit".equalsIgnoreCase(idHolder) == true) {
-                    System.out.println("Returning to title screen");
-                    loopingMain = true;
-                    looping1 = true;
-
-                } else {
-                    System.out.println("Error ! Invalid ID");
-                }
-
-            } while (!looping1);
-        } while (!loopingMain);
-        //idk what to put here for now
-
-
     }
 
+
+    // ===========================
+    //         STAFF MENU
+    // ===========================
     public static void StaffMenu() {
         Scanner sc = new Scanner(System.in);
         boolean staffLooper = false;
+
         while (!staffLooper) {
             System.out.println("What do you want to do ?");
             System.out.println("1. Add Game");
@@ -282,22 +149,24 @@ public class Main {
             switch (staffChoice) {
                 case 1:
                     fileWritingGame();
+                    break;
                 case 2:
                     int whichGame = 0;
                     int[] quantity = getQuantity(whichGame);
                     summaryReport(quantity);
+                    break;
                 case 3:
                     ExitProgram();
+                    break;
                 default:
-                    System.out.printf("\n Error ! Invalid Choice");
-
+                    System.out.println("\n Error ! Invalid Choice");
             }
-
         }
     }
 
-
-    //READ CUSTOMER DATAFILE
+    // ===========================
+    //   READ CUSTOMER DATA FILE
+    // ===========================
     public static ArrayList<Customer> filereadingCusData(ArrayList<Customer> cusLogin) {
 
         File cusData = new File("cusData.txt");
@@ -307,11 +176,13 @@ public class Main {
                 String cusread = fileread.nextLine();
                 Customer cus = new Customer();
                 String[] parts = cusread.split("\\|");
+
                 if (parts.length == 3) {
                     cus.setuserID(parts[0]);
                     cus.setuserPw(parts[1]);
                     cus.setuserEmail(parts[2]);
                 }
+
                 cusLogin.add(new Customer(cus.getuserID(), cus.getuserPw(), cus.getuserEmail()));
             }
 
@@ -321,132 +192,54 @@ public class Main {
         return cusLogin;
     }
 
-    //WRITE CUS FILE
-    public static void fileWritingCustomer() {
-        boolean exitRegi = false;
-        Scanner sc = new Scanner(System.in);
+    // ======================================================
+    //                CUSTOMER MAIN MENU
+    // ======================================================
+    public static void CustomerMainMenu(ArrayList<Cart> cartList,
+                                        ArrayList<Game> gameList,
+                                        AccountWallet wallet,
+                                        Credit card) {
 
-        do {
-            ArrayList<Customer> cusLogin = new ArrayList<Customer>();
-            filereadingCusData(cusLogin);
-
-            //get latest id
-            //get latest element
-            int lastIndex = cusLogin.size() - 1;
-            Customer latestCustomer = cusLogin.get(lastIndex);
-
-            // extract id
-            String cusIdHolder = latestCustomer.getuserID();
-
-            //extract number part of string
-            cusIdHolder = cusIdHolder.substring(1);
-
-            //change it to int
-            int usrIdNum = Integer.parseInt(cusIdHolder);
-            ++usrIdNum;
-            //combine to get new id
-            String newUsrIdNum = ("C" + (usrIdNum));
-
-            Customer cus = new Customer();
-            System.out.println("New ID > " + newUsrIdNum);
-            cus.setuserID(newUsrIdNum);
-            System.out.printf("\nEnter Password > ");
-            cus.setuserPw(sc.nextLine());
-
-            //email + validate email
-            boolean validEmail = false;
-            String tempEmail;
-            do {
-                System.out.printf("\nEnter Email > ");
-
-                tempEmail = sc.nextLine();
-
-                if (validateEmail(tempEmail)) {
-                    validEmail = true;
-                } else {
-                    System.out.println("Invalid Email! Please follow email format!");
-                }
-            } while (validEmail == false);
-
-            cus.setuserEmail(tempEmail);
-
-            System.out.println("ID       > " + cus.getuserID());
-            System.out.println("Password > " + cus.getuserPw());
-            System.out.println("Email    > " + cus.getuserEmail());
-            System.out.println("Confirm ? (Y = proceed /N = return to title screen)> ");
-            char comfirmation2 = sc.next().charAt(0);
-
-            if (Character.toUpperCase(comfirmation2) == 'Y') {
-                try {
-                    FileWriter writecus = new FileWriter("cusData.txt", true);
-                    writecus.write(String.format("%s|%s|%s\n", cus.getuserID(), cus.getuserPw(), cus.getuserEmail()));
-                    writecus.close();
-                    System.out.printf("\nRegister succesful!\n");
-                    exitRegi = true;
-                } catch (IOException e) {
-                    System.out.printf("\nRegister Failed\n");
-                    e.printStackTrace();
-                }
-            } else if (Character.toUpperCase(comfirmation2) == 'N') {
-                exitRegi = true;
-                break;
-            } else {
-                System.out.println("\nPlease only select Yes [Y] or No [N]\n");
-                sc.nextLine();
-            }
-        } while (!exitRegi);
-
-
-    }
-
-    public static boolean validateEmail(String email) {
-        String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
-        Pattern pattern = Pattern.compile(EMAIL_REGEX);
-        Matcher matcher = pattern.matcher(email);
-        return matcher.matches();
-    }
-
-
-    // CUSTOMER MAIN MENU STARTS HERE
-    public static void CustomerMainMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card) {
-        //Create Order Object
         Order order = new Order();
         double total = 0;
 
-        //Variables
-        //main menu after customer login
         int exitprog = 0;
         do {
             int choice = MainMenu();
 
             switch (choice) {
                 case 1:
-                    // GAME ON SALES
-                    // MODIFIED: Replace legacy filereadingGame(gameList) with FileIOService
+                    // Load games using your FileIOService
                     gameList = (ArrayList<Game>) FileIOService.readGameData();
                     order.setSubTotal(gameSelection(gameList, cartList, wallet, card));
                     break;
+
                 case 2:
-                    //VIEW CART CONTENT
                     if (cartList.isEmpty()) {
-                        System.out.println("\n [ You Cart is Empty!! ]\n");
+                        System.out.println("\n [ Your Cart is Empty!! ]\n");
                         CustomerMainMenu(cartList, gameList, wallet, card);
                     }
                     total = viewOrder(order.getSubTotal());
                     System.out.printf("Your total price is....   %.2f!\n\n", total);
                     CartMenu(cartList, gameList, wallet, card, order.getSubTotal());
                     break;
+
                 case 3:
                     topUp(wallet);
                     break;
+
                 case 0:
                     ExitProgram();
+                    break;
             }
             choice = exitprog;
+
         } while (exitprog != 5);
     }
 
-    //Retrieving game into the store===================================================================================
+    // ======================================================
+    //               READ GAMES INTO STORE
+    // ======================================================
     public static ArrayList<Game> filereadingGame(ArrayList<Game> gameList) {
         gameList.clear();
         File gameFile = new File("available_games.txt");
@@ -456,6 +249,7 @@ public class Main {
                 String gameread = fileread.nextLine();
                 Game game = new Game();
                 String[] parts = gameread.split("\\|");
+
                 if (parts.length == 5) {
                     game.setGameID(parts[0]);
                     game.setGameName(parts[1]);
@@ -463,22 +257,30 @@ public class Main {
                     game.setGenre(parts[3]);
                     game.setGameDesc(parts[4]);
                 }
-                gameList.add(new Game(game.getGameID(), game.getGameName(), game.getPrice(), game.getGenre(), game.getGameDesc()));
+
+                gameList.add(new Game(
+                        game.getGameID(),
+                        game.getGameName(),
+                        game.getPrice(),
+                        game.getGenre(),
+                        game.getGameDesc()
+                ));
             }
 
         } catch (FileNotFoundException e) {
             System.out.println("The file does not exist :(");
         }
+
         return gameList;
     }
-    //Adding new game(ONLY FOR STAFF)================================================================================
-
+    // ======================================================
+    //             ADDING NEW GAME (STAFF ONLY)
+    // ======================================================
     public static void fileWritingGame() {
         Scanner sc = new Scanner(System.in);
         char comfirmation;
         Game game = new Game();
         System.out.println("Add new game? (Y/N)> ");
-
 
         do {
             comfirmation = sc.next().charAt(0);
@@ -488,8 +290,10 @@ public class Main {
                 sc.nextLine();
                 System.out.printf("\nNew Game Name: ");
                 game.setGameName(sc.nextLine());
+
                 System.out.printf("\nNew Game Price: ");
                 game.setPrice(sc.nextDouble());
+
                 System.out.printf("""
                         New Game Genre (Enter the number for a Genre)
                         ---------------------------------------------
@@ -498,66 +302,62 @@ public class Main {
                         3)Shooter       7)Relaxing
                         4)Story Rich    8)Strategy
                         """);
+
                 switch (sc.nextInt()) {
-                    case 1:
-                        game.setGenre("RPG");
-                        break;
-                    case 2:
-                        game.setGenre("Action");
-                        break;
-                    case 3:
-                        game.setGenre("Shooter");
-                        break;
-                    case 4:
-                        game.setGenre("Story Rich");
-                        break;
-                    case 5:
-                        game.setGenre("Adventure");
-                        break;
-                    case 6:
-                        game.setGenre("Horror");
-                        break;
-                    case 7:
-                        game.setGenre("Relaxing");
-                        break;
-                    case 8:
-                        game.setGenre("Strategy");
-                        break;
-                    default:
-                        System.out.println("\nPlease only select number from 1-8 for setting a Genre\n");
+                    case 1 -> game.setGenre("RPG");
+                    case 2 -> game.setGenre("Action");
+                    case 3 -> game.setGenre("Shooter");
+                    case 4 -> game.setGenre("Story Rich");
+                    case 5 -> game.setGenre("Adventure");
+                    case 6 -> game.setGenre("Horror");
+                    case 7 -> game.setGenre("Relaxing");
+                    case 8 -> game.setGenre("Strategy");
+                    default -> System.out.println("\nPlease select 1-8 only.\n");
                 }
+
                 sc.nextLine();
                 System.out.printf("\nNew Game Description: ");
                 game.setGameDesc(sc.nextLine());
 
                 try {
                     FileWriter writegame = new FileWriter("available_games.txt", true);
-                    writegame.write(String.format("%s|%s|%.2f|%s|%s\n", game.getGameID(), game.getGameName(), game.getPrice(), game.getGenre(), game.getGameDesc()));
+                    writegame.write(String.format(
+                            "%s|%s|%.2f|%s|%s\n",
+                            game.getGameID(),
+                            game.getGameName(),
+                            game.getPrice(),
+                            game.getGenre(),
+                            game.getGameDesc()
+                    ));
                     writegame.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
                 System.out.printf("\nAdd another Game? > ");
                 comfirmation = sc.next().charAt(0);
-            } else if (Character.toUpperCase(comfirmation) == 'N') {
+            }
+            else if (Character.toUpperCase(comfirmation) == 'N') {
                 break;
-            } else {
-                System.out.println("Please only select Yes [Y] or No [N]");
+            }
+            else {
+                System.out.println("Please select Yes [Y] or No [N]");
                 sc.nextLine();
             }
 
         } while (Character.toUpperCase(comfirmation) == 'Y' || Character.toUpperCase(comfirmation) != 'N');
     }
 
-    //DISPLAY THE MAIN MENU =======================================================================
+    // ======================================================
+    //                 DISPLAY MAIN MENU
+    // ======================================================
     public static int MainMenu() {
         boolean valid = false;
         Scanner sc = new Scanner(System.in);
         int choice = 0;
 
         do {
-            System.out.printf(
-                    """
+            System.out.printf("""
                             ========================================
                                   (===M===)  _____   []
                                   |   |   |  [___|   __   [===         
@@ -572,30 +372,31 @@ public class Main {
                               0. Exit Program
                             """);
 
-
-            //validate
             try {
                 choice = sc.nextInt();
 
                 if (choice < 0 || choice > 3) {
                     valid = false;
-                    System.out.println("Enter value is not in range with the option!");
-                    System.out.println("Only enter number from 0 - 3 !");
-                } else
-                    valid = true;
+                    System.out.println("Enter a number from 0 - 3!");
+                } else valid = true;
+
             } catch (Exception ex) {
                 valid = false;
                 sc.nextLine();
-                System.out.println("Only Enter number!");
+                System.out.println("Only numbers are allowed!");
             }
-        } while (valid == false);
+
+        } while (!valid);
+
         return choice;
     }
 
-
-    //GAME MENU (INCLUDE VIEWING GAME, ADD TO CART, AND CALCULATE SUBTOTAL
+    // ======================================================
+    //                 GAME CATALOG MENU
+    // ======================================================
     public static void menucontent(List<Game> gameList) {
         int i = 0;
+
         System.out.printf("""
             
             
@@ -607,30 +408,21 @@ public class Main {
                ====   =  =  =  =  =  ====    =  =  =  ====  =   =   ===
             ==============================================================
             """);
+
         for (Game printgame : gameList) {
             System.out.println(++i + ") " + printgame.getGameName());
         }
     }
 
-    /**
-     * Handles the Game Catalog view, selection, and Cart addition flow (Controller/Delegator).
-     * GameList = The list of all available games.
-     * CartList = The current list of items in the customer's cart.
-     * Wallet = The customer's AccountWallet object.
-     * Card = The customer's Credit object.
-     * Returns The calculated subtotal of the cart
-     */
-    /**
-     * Handles the Game Catalog view, selection, and Cart addition flow (Controller/Delegator).
-     * Delegates business logic to GameService and CartService (SRP).
-     *
-     * @param gameList The list of all available games.
-     * @param cartList The current list of items in the customer's cart.
-     * @param wallet The customer's AccountWallet object.
-     * @param card The customer's Credit object.
-     * @return The calculated subtotal of the cart
-     */
-    public static double gameSelection(List<Game> gameList, List<Cart> cartList, AccountWallet wallet, Credit card) {
+    // ======================================================
+    //          GAME SELECTION + ADD TO CART FLOW
+    // ======================================================
+    public static double gameSelection(
+            List<Game> gameList,
+            List<Cart> cartList,
+            AccountWallet wallet,
+            Credit card) {
+
         Scanner sc = new Scanner(System.in);
         int option = 0;
         char proceed;
@@ -639,38 +431,34 @@ public class Main {
         do {
             menucontent(gameList);
 
-            System.out.printf("\n0) Exit Game Menu" + "\nSelect a game > ");
+            System.out.printf("\n0) Exit Game Menu\nSelect a game > ");
 
             boolean inputValid = false;
             while (!inputValid) {
                 try {
                     option = sc.nextInt();
 
+                    // Exit back to main
                     if (option == 0) {
-                        // Exit path delegates control back to CustomerMainMenu
                         CustomerMainMenu((ArrayList<Cart>) cartList, (ArrayList<Game>) gameList, wallet, card);
                         return cartService.calculateSubTotal(cartList);
                     }
 
-                    // Delegation: Use GameService to retrieve the game (SRP)
                     selectedGame = gameService.getSelectedGame(gameList, option);
                     inputValid = true;
 
                 } catch (IndexOutOfBoundsException e) {
-                    // Preventive: Handles selection outside the list range (e.g., input 99)
                     LOGGER.log(Level.WARNING, "User entered invalid game index: " + option);
-                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
-                    sc.nextLine(); // Clear scanner buffer
+                    System.out.println(ErrorMessage.INVALID_CHOICE);
+                    sc.nextLine();
                 } catch (java.util.InputMismatchException e) {
-                    // Preventive: Catch non-numeric input gracefully
-                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
+                    System.out.println(ErrorMessage.INVALID_CHOICE);
                     sc.nextLine();
                 }
             }
 
-            // --- Display Game Details ---
-            System.out.printf(
-                    """
+            // Show game details
+            System.out.printf("""
                     =================================================================
                          Game Name  : %s
                          Game Price : %.2f
@@ -680,56 +468,45 @@ public class Main {
                         ------------------------------ 
                     
                     """, selectedGame.getGameName(), selectedGame.getPrice(), selectedGame.getGenre());
+
             formatGameDesc(selectedGame.getGameDesc(), 40);
             System.out.println("=================================================================");
 
-            // --- Options Segment ---
-            System.out.printf("""   
-            [1] Add to Cart     [2] Reviews     [3] Back to Games   
+            System.out.printf("""
+            [1] Add to Cart     [2] Reviews     [3] Back to Games
             Please Enter An Option (1-3):  """);
 
             option = sc.nextInt();
 
             switch (option) {
-                case 1:
-                    // Delegation: Use CartService to add item (SRP)
+                case 1 -> {
                     cartService.addItemToCart(cartList, selectedGame);
 
                     System.out.printf("================= Your Cart Content =================\n");
-                    // NOTE: Display logic remains in Main/View layer
                     System.out.println("Game Name                        Price");
+
                     for (Cart cartprint : cartList) {
                         System.out.println(cartprint.getGameName() + "              " + cartprint.getPrice());
                     }
 
-                    // Delegation: Use CartService to calculate total (SRP)
                     double totalPrice = cartService.calculateSubTotal(cartList);
-                    System.out.println("Total price:                    " + String.format("%.2f", totalPrice));
-                    break;
-                case 2:
-                    System.out.println("\n  Showing recent reviews:" + "\n  -------------------------");
-                    // NOTE: Review display logic is currently unrefactored/commented out
-                    break;
-                case 3:
-                    // Return to the game list loop start
-                    break;
+                    System.out.println("Total price: " + String.format("%.2f", totalPrice));
+                }
+                case 2 -> System.out.println("\n  Showing recent reviews:\n  -------------------------");
+                case 3 -> { /* back */ }
             }
+
             System.out.println("\n Continue Looking For Games? (Y/N) > ");
             proceed = sc.next().charAt(0);
             sc.nextLine();
 
         } while (Character.toUpperCase(proceed) == 'Y');
 
-        // Final total calculation before exiting
         return cartService.calculateSubTotal(cartList);
     }
-
-    /**
-     * Formats a long game description to wrap at a specified width for readability.
-     * This is a utility method assisting the Presentation layer (View).
-     * Desc = The full description string.
-     * Width = The maximum character width per line.
-     */
+    // ======================================================
+    //        FORMAT LONG GAME DESCRIPTIONS (WRAPPING)
+    // ======================================================
     public static void formatGameDesc(String desc, int width) {
         String[] descSplit = desc.split("\\s+");
         StringBuilder nextline = new StringBuilder();
@@ -741,71 +518,85 @@ public class Main {
                 }
                 nextline.append(descG);
             } else {
-                System.out.println("    " + nextline.toString());
+                System.out.println("    " + nextline);
                 nextline = new StringBuilder(descG);
             }
         }
+
         if (nextline.length() > 0) {
-            System.out.println(nextline.toString());
+            System.out.println(nextline);
         }
     }
 
-    /**
-     * MODIFIED
-     * @param totalPrice
-     * @return
-     */
+    // ======================================================
+    //                 VIEW ORDER DETAILS
+    // ======================================================
     public static double viewOrder(double totalPrice) {
         Order order = new Order();
 
         order.setSubTotal(totalPrice);
         order.calculateTaxAndTotal();
+
         System.out.println(order);
+
         return order.getTotal();
     }
 
-    //TOP UP
+    // ======================================================
+    //                        TOP UP
+    // ======================================================
     public static void topUp(AccountWallet wallet) {
-        String topupInput;
-        double amount;
-
         Scanner sc = new Scanner(System.in);
 
-        //print account wallet info
         System.out.println(wallet.toString());
         System.out.println("\nPlease input amount to Top-Up below: ");
         System.out.println("Do 'X' to Exit");
 
-        topupInput = sc.nextLine();
+        String topupInput = sc.nextLine();
 
         if (!topupInput.equalsIgnoreCase("X")) {
-            amount = Double.parseDouble(topupInput);
+            double amount = Double.parseDouble(topupInput);
             wallet.increase(amount);
             System.out.println(" Your Current Balance is: " + wallet.checkBalance());
         }
     }
 
-    // ADD A CREDIT CARD
-    public static void addBank(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card) {
+    // ======================================================
+    //                 ADD A CREDIT CARD
+    // ======================================================
+    public static void addBank(
+            ArrayList<Cart> cartList,
+            ArrayList<Game> gameList,
+            AccountWallet wallet,
+            Credit card) {
+
+        Scanner sc = new Scanner(System.in);
+
         String cardNumber;
         String cardType;
         String cardExpDate;
+
         boolean validNumber = false;
         boolean validType = false;
         boolean validDate = false;
-        Scanner sc = new Scanner(System.in);
-        System.out.println("== Adding Bank Account ============================="
-                + "\nDo 'X' to Exit To Main Menu"
-                + "\n Enter Bank Associated with Account > ");
+
+        System.out.println("""
+                == Adding Bank Account =============================
+                Do 'X' to Exit To Main Menu
+                Enter Bank Associated with Account > 
+                """);
+
         do {
             cardType = sc.nextLine();
 
             if (cardType.equalsIgnoreCase("X")) {
                 CustomerMainMenu(cartList, gameList, wallet, card);
+                return;
             } else {
                 validType = true;
             }
-        } while (validType = false);
+
+        } while (!validType);
 
         System.out.println(" Enter Bank Account Number (8 digits) > ");
 
@@ -813,13 +604,13 @@ public class Main {
             cardNumber = sc.next();
             if (cardNumber.equalsIgnoreCase("X")) {
                 CustomerMainMenu(cartList, gameList, wallet, card);
+                return;
             } else if (isEightDigits(cardNumber)) {
                 validNumber = true;
             } else {
-                validNumber = false;
-                System.out.println("Invalid Card Number! Must be at least 8 Digits!");
+                System.out.println("Invalid Card Number! Must be exactly 8 digits!");
             }
-        } while (validNumber == false);
+        } while (!validNumber);
 
         System.out.println(" Enter Card Expiration Date (MM/YY) > ");
 
@@ -827,76 +618,66 @@ public class Main {
             cardExpDate = sc.next();
             if (cardExpDate.equalsIgnoreCase("X")) {
                 CustomerMainMenu(cartList, gameList, wallet, card);
+                return;
             } else if (isValidDate(cardExpDate)) {
                 validDate = true;
             } else {
-                validDate = false;
-                System.out.println("Invalid Expiration Date! Use Format: MM/YY");
+                System.out.println("Invalid Expiration Date! Use MM/YY");
             }
-        } while (validDate == false);
+        } while (!validDate);
 
-        // SAVE ALL CREDIT CARD INFO INTO CARD THEN BACK TO MAIN
+        // SAVE CARD DATA
         card.setNumber(cardNumber);
         card.setType(cardType);
         card.setExpDate(cardExpDate);
-        //print
+
         System.out.println("Successfully Added a Credit Card!");
-        System.out.println(card.toString());
-
+        System.out.println(card);
     }
 
+    // ======================================================
+    //         DATE VALIDATION (MM/YY)
+    // ======================================================
     public static boolean isValidDate(String dateStr) {
-        // Define the regular expression pattern for MM/YY format
         String patternStr = "^\\d{2}/\\d{2}$";
-
-        // Create a Pattern object
-        Pattern pattern = Pattern.compile(patternStr);
-
-        // Create a Matcher object
-        Matcher matcher = pattern.matcher(dateStr);
-
-        return matcher.matches();
+        return Pattern.compile(patternStr).matcher(dateStr).matches();
     }
 
-
+    // ======================================================
+    //        CHECK IF STRING IS EXACTLY 8 DIGITS
+    // ======================================================
     public static boolean isEightDigits(String input) {
-        // Define a regular expression pattern for 8 digits
-        String regex = "\\d{8}";
-
-        // Create a Pattern object
-        Pattern pattern = Pattern.compile(regex);
-
-        // Create a Matcher object to match the input against the pattern
-        Matcher matcher = pattern.matcher(input);
-
-        // Check if the input matches the pattern (contains 8 digits)
-        return matcher.matches();
+        return Pattern.compile("\\d{8}").matcher(input).matches();
     }
+    // ======================================================
+    //                    CART MENU
+    // ======================================================
+    public static void CartMenu(
+            ArrayList<Cart> cartList,
+            ArrayList<Game> gameList,
+            AccountWallet wallet,
+            Credit card,
+            double subTotal) {
 
-    // Updated Cartmenu
-    public static void CartMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card, double subTotal) {
-        boolean valid = false;
         Scanner sc = new Scanner(System.in);
+        boolean valid = false;
         int choice = 0;
 
-        // Calculate total price including tax for display
         Order tempOrder = new Order();
         tempOrder.setSubTotal(subTotal);
         tempOrder.calculateTaxAndTotal();
         double total = tempOrder.getTotal();
 
         do {
-            System.out.println(
-                    """
-                            ========================================
-                                  o====-  __    __   |
-                                  |      |__|  [    =|== 
-                                  o====o |  |  [     |_
-                            ========================================
-                              Displaying Cart:
-                            """);
+            System.out.println("""
+                    ========================================
+                          o====-  __    __   |
+                          |      |__|  [    =|== 
+                          o====o |  |  [     |_
+                    ========================================
+                      Displaying Cart:
+                    """);
 
-            // Display cart contents
             if (cartList.isEmpty()) {
                 System.out.println("       [ Cart is currently empty ]");
             } else {
@@ -908,209 +689,194 @@ public class Main {
                 System.out.printf(" Total Price:                     %.2f\n", total);
             }
 
-            System.out.println(
-                    """
-                            ========================================
-                                Please pick an option:
-                            1. Proceed with Checkout Order
-                            2. Remove Item From Cart
-                            3. Clear Cart
-                            4. Return to Main Menu
-                            """);
+            System.out.println("""
+                    ========================================
+                        Please pick an option:
+                    1. Proceed with Checkout Order
+                    2. Remove Item From Cart
+                    3. Clear Cart
+                    4. Return to Main Menu
+                    """);
 
-            //validate (MODIFIED: Range changed from 1-2 to 1-4)
             try {
                 choice = sc.nextInt();
 
                 if (choice < 1 || choice > 4) {
                     valid = false;
-                    System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
-                } else {
-                    valid = true;
-                }
+                    System.out.println(ErrorMessage.INVALID_CHOICE);
+                } else valid = true;
+
             } catch (Exception ex) {
                 valid = false;
                 sc.nextLine();
-                System.out.println(ErrorMessage.INVALID_CHOICE); // Use Constant
+                System.out.println(ErrorMessage.INVALID_CHOICE);
             }
-        } while (valid == false);
 
-        //choice
+        } while (!valid);
+
         switch (choice) {
-            case 1:
+            case 1 -> {
                 if (cartList.isEmpty()) {
                     System.out.println("Cannot proceed to payment. Cart is empty!");
                     CartMenu(cartList, gameList, wallet, card, subTotal);
                 } else {
                     PaymentMenu(cartList, gameList, wallet, card, total);
                 }
-                break;
-            case 2:
-                // Delegates to the new helper function
+            }
+
+            case 2 -> {
                 removeItemView(cartList);
-                // Recalculate and re-display
                 CartMenu(cartList, gameList, wallet, card, cartService.calculateSubTotal(cartList));
-                break;
-            case 3:
-                // Delegates to CartService (SRP)
+            }
+
+            case 3 -> {
                 cartService.clearCart(cartList);
                 System.out.println("\n[ Cart has been cleared! ]\n");
-                // Recalculate and re-display
                 CartMenu(cartList, gameList, wallet, card, 0.0);
-                break;
-            case 4:
-                CustomerMainMenu(cartList, gameList, wallet, card);
-                break;
+            }
+
+            case 4 -> CustomerMainMenu(cartList, gameList, wallet, card);
         }
     }
 
+    // ======================================================
+    //                    REMOVE CART ITEM
+    // ======================================================
     public static void removeItemView(List<Cart> cartList) {
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter the Game ID (e.g., G1001) to remove: ");
         String idToRemove = sc.nextLine();
 
-        // Delegation: Call the CartService function (SRP)
         boolean removed = cartService.removeItemFromCart(cartList, idToRemove);
 
         if (removed) {
             System.out.println("Successfully removed item with ID: " + idToRemove);
         } else {
-            System.out.println(ErrorMessage.ITEM_NOT_FOUND); // Use Constant
+            System.out.println(ErrorMessage.ITEM_NOT_FOUND);
         }
     }
 
-    /**
-     * MODIFIED AND ADDED
-     * @param cartList
-     * @param gameList
-     * @param wallet
-     * @param card
-     * @param total
-     */
-    //PAYMENT
-    public static void PaymentMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card, double total)
-    {
+    // ======================================================
+    //                    PAYMENT MENU
+    // ======================================================
+    public static void PaymentMenu(
+            ArrayList<Cart> cartList,
+            ArrayList<Game> gameList,
+            AccountWallet wallet,
+            Credit card,
+            double total) {
+
+        Scanner sc = new Scanner(System.in);
         int choiceInt = 0;
         boolean valid;
-        Scanner sc = new Scanner(System.in);
 
         System.out.println("""
-                           ====================================================
-                                 O===                                    
-                                 |___] ___       ___ ___  ___ ___     |  
-                                 |    |___| |__} |  |  | |___ |  |  ==|==
-                                 |    |   |  __| |  |  | |___ |  |    |_
-                           ====================================================
-                           """);
+               ====================================================
+                     O===                                    
+                     |___] ___       ___ ___  ___ ___     |  
+                     |    |___| |__} |  |  | |___ |  |  ==|==
+                     |    |   |  __| |  |  | |___ |  |    |_
+               ====================================================
+               """);
 
-        do{
-            System.out.printf("""
+        do {
+            System.out.println("""
                   Select Payment Type:
                  1. Credit Card
                  2. Account Wallet
-                    """);
+                """);
 
-            //validate
-            try
-            {
+            try {
                 choiceInt = sc.nextInt();
-
-                if (choiceInt < 1 || choiceInt > 2){
-                    valid = false;
-                    System.out.println("Enter value is not in range with the option!");
-                    System.out.println("Only enter number from 1 - 2 !");
-                }
-                else
-                    valid = true;
-            }
-            catch(Exception ex){
+                valid = (choiceInt >= 1 && choiceInt <= 2);
+            } catch (Exception ex) {
                 valid = false;
                 sc.nextLine();
                 System.out.println("Only Enter number!");
             }
-        } while (!valid); //MODIFIED KISS PRINCPLE
+
+        } while (!valid);
 
         IPaymentMethod selectedMethod = null;
-        PaymentChoice choice = PaymentChoice.fromValue(choiceInt); // Convert validated integer to Enum
+        PaymentChoice choice = PaymentChoice.fromValue(choiceInt);
 
-        // 1. SELECT PAYMENT METHOD (Dependency setup)
         switch (choice) {
-            case CREDIT_CARD:
-                // 1. SELECT PAYMENT METHOD: Credit Card
-                addBank(cartList, gameList, wallet, card); // Legacy setup logic
-                selectedMethod = card; // Card is now the concrete dependency
-                break;
+            case CREDIT_CARD -> {
+                addBank(cartList, gameList, wallet, card);
+                selectedMethod = card;
+            }
 
-            case ACCOUNT_WALLET:
-                // 2. SELECT PAYMENT METHOD: Account Wallet
-                selectedMethod = wallet; // Wallet is now the concrete dependency
-
-                // Handle Wallet confirmation before processing (Legacy UI/UX)
-                int subChoice = 0;
-                boolean subValid;
+            case ACCOUNT_WALLET -> {
+                selectedMethod = wallet;
 
                 System.out.println("\nYour Wallet Balance: " + wallet.checkBalance());
                 System.out.println("Total Price          : " + total);
 
-                do{
+                int subChoice = 0;
+                boolean subValid;
+
+                do {
                     System.out.println("""
                         1. Yes, pay with Account Wallet.
                         2. Cancel, return to Main Menu.
-                            """);
-                    try
-                    {
+                    """);
+
+                    try {
                         subChoice = sc.nextInt();
-                        if (subChoice < 1 || subChoice > 2){
-                            subValid = false;
-                        } else {
-                            subValid = true;
-                        }
-                    } catch(Exception ex){
+                        subValid = (subChoice == 1 || subChoice == 2);
+                    } catch (Exception ex) {
                         subValid = false;
                         sc.nextLine();
                         System.out.println("Only Enter number!");
                     }
+
                 } while (!subValid);
 
                 if (subChoice == 2) {
-                    CustomerMainMenu(cartList, gameList, wallet, card); // Exit to main menu
+                    CustomerMainMenu(cartList, gameList, wallet, card);
                     return;
                 }
-                break;
+            }
 
-            case INVALID:
-                // Should not be reached due to input validation above, but handles the case gracefully.
-                System.out.println("Error: Invalid payment selection.");
+            case INVALID -> {
+                System.out.println("Invalid payment method!");
                 return;
+            }
         }
 
-        /**
-         *  MODIFIED AND ADDED
-         */
-        // 2. EXECUTE PAYMENT (Calls the new decoupled PaymentProcessor)
-        // The processor handles the transaction, state update (decrease amount), receipt, and cart clearance.
-        Order currentOrder = new Order(); // Need an Order object to pass the total amount
+        Order currentOrder = new Order();
         currentOrder.setSubTotal(total);
         currentOrder.calculateTaxAndTotal();
 
         boolean paymentSuccess = PaymentProcessor.executePayment(selectedMethod, cartList, currentOrder, wallet, card);
 
         if (paymentSuccess) {
-            titleScreen(); // Successful payment returns to title screen
+            titleScreen();
         } else {
-            // 3. HANDLE FAILURE (Processor returns false on insufficient funds/auth failure)
             FailedPaymentMenu(cartList, gameList, wallet, card, total);
         }
     }
 
+    // ======================================================
+    //          VALIDATE SUFFICIENT WALLET FUNDS
+    // ======================================================
     public static boolean ValidateSufficientFunds(double balance, double price) {
-        return balance >= price; //MODIFIED KISS principle (simplfy the if-else statement)
+        return balance >= price;
     }
 
-    public static void FailedPaymentMenu(ArrayList<Cart> cartList, ArrayList<Game> gameList, AccountWallet wallet, Credit card, double total) {
+    // ======================================================
+    //                FAILED PAYMENT MENU
+    // ======================================================
+    public static void FailedPaymentMenu(
+            ArrayList<Cart> cartList,
+            ArrayList<Game> gameList,
+            AccountWallet wallet,
+            Credit card,
+            double total) {
+
+        Scanner sc = new Scanner(System.in);
         boolean valid;
         int choiceInt = 0;
-        Scanner sc = new Scanner(System.in);
 
         do {
             System.out.println("""
@@ -1122,91 +888,78 @@ public class Main {
                         4. Retry Payment Methods
                     """);
 
-            //validate
             try {
                 choiceInt = sc.nextInt();
-
-                if (choiceInt < 1 || choiceInt > 4) {
-                    valid = false;
-                    System.out.println("Enter value is not in range with the option!");
-                    System.out.println("Only enter number from 1 - 4 !");
-                } else
-                    valid = true;
+                valid = (choiceInt >= 1 && choiceInt <= 4);
             } catch (Exception ex) {
                 valid = false;
                 sc.nextLine();
                 System.out.println("Only Enter number!");
             }
-        } while (!valid); //MODIFIED
+
+        } while (!valid);
 
         FailedPaymentOption choice = FailedPaymentOption.fromValue(choiceInt);
 
-        switch(choice){
-            case TOP_UP_WALLET:
+        switch (choice) {
+            case TOP_UP_WALLET -> {
                 topUp(wallet);
-                // After top-up, retry payment (brings user back to PaymentMenu)
                 PaymentMenu(cartList, gameList, wallet, card, total);
-                break;
-            case RETURN_TO_MAIN_MENU:
+            }
+            case RETURN_TO_MAIN_MENU -> CustomerMainMenu(cartList, gameList, wallet, card);
+            case RETURN_TO_CART_MENU -> CartMenu(cartList, gameList, wallet, card, total);
+            case RETRY_PAYMENT -> PaymentMenu(cartList, gameList, wallet, card, total);
+            case INVALID -> {
+                System.out.println("Unexpected error. Returning to Main Menu.");
                 CustomerMainMenu(cartList, gameList, wallet, card);
-                break;
-            case RETURN_TO_CART_MENU:
-                CartMenu(cartList, gameList, wallet, card, total);
-                break;
-            case RETRY_PAYMENT:
-                PaymentMenu(cartList, gameList, wallet, card, total);
-                break;
-            case INVALID:
-                // This case handles the theoretically impossible scenario due to prior validation.
-                System.out.println("An unexpected error occurred. Returning to Main Menu.");
-                CustomerMainMenu(cartList, gameList, wallet, card);
-                break;
+            }
         }
     }
 
+    // ======================================================
+    //                    SUMMARY REPORT
+    // ======================================================
     public static void summaryReport(int[] quant) {
-
 
         ArrayList<Game> gameList = new ArrayList<>();
         filereadingGame(gameList);
 
-        // Display the summary report for each customer
         System.out.println("                           Welcome to Summary Report!                        ");
         System.out.println("=============================================================================");
         System.out.println("Games                         Quantity Sold                            Amount");
+
         for (int i = 0; i < gameList.size(); i++) {
-            Game game = gameList.get(i); // Get the Game object at index i
-            int quantitySold = quant[i]; // Get the quantity sold from the quant array
+            Game game = gameList.get(i);
+            int quantitySold = quant[i];
+            double amount = game.getPrice() * quantitySold;
 
-            String gameName = game.getGameName();
-            double price = game.getPrice();
-            double amount = price * quantitySold;
-
-            System.out.printf("\n%-30s %-20d %.2f%n\n", gameName, quantitySold, amount);
+            System.out.printf("\n%-30s %-20d %.2f%n\n", game.getGameName(), quantitySold, amount);
         }
 
         System.out.println("Total :                                                                      ");
         System.out.println("=============================================================================");
         System.out.println("                              Have a nice day!                               ");
-
     }
 
+    // ======================================================
+    //             GET QUANTITY FOR SUMMARY
+    // ======================================================
     public static int[] getQuantity(int whichGame) {
 
         ArrayList<Game> gameList = new ArrayList();
         filereadingGame(gameList);
 
-        //quantity for summary
         int sizeHolder = gameList.size() - 1;
         int[] quantity = new int[sizeHolder];
-        //increment quantity
+
         quantity[whichGame] += 1;
 
         return quantity;
-
     }
 
-    //EXIT
+    // ======================================================
+    //                     EXIT PROGRAM
+    // ======================================================
     public static void ExitProgram() {
         System.out.println("See you next time!");
         System.exit(0);

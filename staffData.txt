@@ -1,0 +1,10 @@
+S1000|staff1|S1001@mail.com
+S1001|staff2|S1002@mail.com
+S1002|staff3|S1003@mail.com
+S1003|staff4|S1004@mail.com
+S1004|staff5|S1005@mail.com
+S1005|staff6|S1006@mail.com
+S1006|staff7|S1007@mail.com
+S1007|staff8|S1008@mail.com
+S1008|staff9|S1009@mail.com
+S1009|staff10|S1010@mail.com
