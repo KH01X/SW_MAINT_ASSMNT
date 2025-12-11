@@ -1,7 +1,6 @@
-package ModernizeSystem;
+package ModernizeSystem.Controller;
 
 /**
- * MODIFIED AND ADDED
  * Using an enum for the payment choices
  */
 public enum PaymentChoice {
@@ -19,7 +18,11 @@ public enum PaymentChoice {
         return value;
     }
 
-    // Helper method to convert an integer input back to an enum constant
+    /**
+     * Helper method to convert an integer input back to an enum constant
+     * @param value
+     * @return the choice
+     */
     public static PaymentChoice fromValue(int value) {
         for (PaymentChoice choice : PaymentChoice.values()) {
             if (choice.value == value) {

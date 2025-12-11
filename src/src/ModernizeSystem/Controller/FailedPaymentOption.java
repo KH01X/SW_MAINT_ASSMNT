@@ -1,7 +1,7 @@
-package ModernizeSystem;
+package ModernizeSystem.Controller;
 
 /**
- * MODIFIED AND ADDED
+ * enum for failed payment menu
  */
 
 public enum FailedPaymentOption {

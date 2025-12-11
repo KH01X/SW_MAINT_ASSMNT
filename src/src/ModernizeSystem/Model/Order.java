@@ -1,16 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package ModernizeSystem;
+package ModernizeSystem.Model;
+
+import java.text.SimpleDateFormat;  
+import java.util.Date;
 
 /**
- * THERE IS MODIFIED AND ADDED
- * @author admin
+ * Order object that will handle the calculation of tax price and total price
+ * that will be use when user want to make payment
  */
-import java.text.SimpleDateFormat;  
-import java.util.Date;  
-
 public class Order {
     protected String orderID;
     protected Date orderDate;
@@ -23,8 +19,10 @@ public class Order {
     
     private static int numOrderID= 1001;
     private static int tax = 5;
-    
-      
+
+    /**
+     * order constructor that store the orderID and the date
+     */
     public Order()
     {
         SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD");
@@ -37,70 +35,54 @@ public class Order {
 
     /**
      * USE FOR CALCULATING THE PRICE IN MAIN
-     * MODIFIED/ADDED: New cohesive method for calculation (SRP: Calculation)
+     * calculate the tax price and total
      */
 
     public void calculateTaxAndTotal()
     {
-        // Responsibility 1 (Calculation Logic): Determines tax and final total.
         this.taxPrice = this.subTotal * tax / 100.0; // Calculate 5% tax
         this.total = this.subTotal + this.taxPrice;  // Calculate final total
     }
 
-    // REMOVED: The old calculateFinal(double) and calculateTax(double) methods.
+    /**
+     *
+     * @return total price
+     */
     public double getTotal(){
         return total;
     }
+
+    /**
+     *
+     * @return subTotal of the order that user want to check out
+     */
     public double getSubTotal(){
         return subTotal;
     }
     public double getTaxPrice(){ // Added accessor for tax price
         return taxPrice;
     }
-    //Functions
-    
-    public String getOrderID()
-    {
-        this.orderID = "O" + numOrderID;
-        numOrderID++;
-        return orderID;
-    }
-    
-    public Date getOrderDate()
-    {
-        return this.orderDate;
-    }
-    public String getOrderDesc()
-    {
-        return this.orderDesc;
-    }
-    
-    public void setOrderID(String newOrderID)
-    {
-        this.orderID = newOrderID;
-    }
-    public void setOrderDate(Date newOrderDate)
-    {
-        this.orderDate = newOrderDate;
-    }
-    public void setOrderDesc(String newOrderDesc)
-    {
-        this.orderDesc = newOrderDesc;
-    }
+
+    /**
+     * setter
+     * @param subTotal return the subtotal
+     */
     public void setSubTotal(double subTotal){
         this.subTotal = subTotal;
     }
-    
+
+    /**
+     * toString method to display the order detail
+     * @return order detail
+     */
     @Override
     public String toString()
     {
-        this.total = this.subTotal * 1.05;
-        
         return String.format("""
                              ====== Your Order ======
                                Order number  > %s
                                Order Date    > %s
-                               Order Desc    >
+                               Order Desc    >>>
                                Subtotal      > %.2f
                                Tax Rate(5%%)  > %.2f
                                Total         > %.2f
