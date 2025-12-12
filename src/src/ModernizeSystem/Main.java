@@ -149,9 +149,9 @@ public class Main {
                     fileWritingGame();
                     break;
                 case 2:
-                    int whichGame = 0;
-                    int[] quantity = getQuantity(whichGame);
-                    summaryReport(quantity);
+                    int[] quantity = getQuantity(0);  // still using your old logic
+                    SummaryReportController controller = new SummaryReportController();
+                    controller.generateReport(quantity);
                     break;
                 case 3:
                     ExitProgram();
