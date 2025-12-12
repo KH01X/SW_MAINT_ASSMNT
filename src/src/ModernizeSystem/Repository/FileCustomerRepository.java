@@ -3,55 +3,76 @@ package ModernizeSystem.Repository;
 import ModernizeSystem.Model.CustomerModel;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.locks.*;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * File-based implementation of CustomerRepository.
+ * Stores customer data in pipe-delimited format inside cusData.txt.
+ */
 public class FileCustomerRepository implements CustomerRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(FileCustomerRepository.class.getName());
-    private static final String FILE_NAME = "cusData.txt";
+    private static final Logger LOGGER =
+            Logger.getLogger(FileCustomerRepository.class.getName());
+
+    private static final String DEFAULT_FILE = "cusData.txt";
+    private static final String SEPARATOR = "|";
 
     private final Path path;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public FileCustomerRepository() {
-        this.path = Path.of(FILE_NAME);
+        this(Path.of(DEFAULT_FILE));
+    }
+
+    public FileCustomerRepository(Path path) {
+        this.path = path;
         ensureFileExists();
     }
 
+    // =========================================================================
+    // READ ALL
+    // =========================================================================
     @Override
     public List<CustomerModel> findAll() {
         lock.readLock().lock();
         try {
             if (!Files.exists(path)) return new ArrayList<>();
 
-            List<String> lines = Files.readAllLines(path);
+            List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
             List<CustomerModel> customers = new ArrayList<>();
 
             for (String line : lines) {
-                CustomerModel c = parse(line);
-                if (c != null) customers.add(c);
+                parse(line).ifPresent(customers::add);
             }
-
             return customers;
 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error reading file", e);
+            LOGGER.log(Level.SEVERE, "Failed to read customer data", e);
             return new ArrayList<>();
+
         } finally {
             lock.readLock().unlock();
         }
     }
 
+    // =========================================================================
+    // FIND BY ID
+    // =========================================================================
     @Override
     public Optional<CustomerModel> findById(String id) {
         return findAll().stream()
-                .filter(c -> c.getId().equals(id))
+                .filter(c -> c.getId().equalsIgnoreCase(id))
                 .findFirst();
     }
 
+    // =========================================================================
+    // FIND BY EMAIL
+    // =========================================================================
     @Override
     public Optional<CustomerModel> findByEmail(String email) {
         return findAll().stream()
@@ -59,59 +80,105 @@ public class FileCustomerRepository implements CustomerRepository {
                 .findFirst();
     }
 
+    // =========================================================================
+    // SAVE
+    // =========================================================================
     @Override
     public CustomerModel save(CustomerModel customer) {
         lock.writeLock().lock();
         try {
-            String line = String.format("%s|%s|%s%n",
-                    customer.getId(), customer.getPassword(), customer.getEmail());
-
-            Files.writeString(path, line, StandardOpenOption.APPEND);
-
+            String line = serialize(customer);
+            Files.writeString(
+                    path,
+                    line,
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND
+            );
             return customer;
 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error writing to file", e);
-            throw new IllegalStateException("Failed to save user", e);
+            LOGGER.log(Level.SEVERE, "Failed to save customer", e);
+            throw new IllegalStateException("Failed to save customer", e);
+
         } finally {
             lock.writeLock().unlock();
         }
     }
 
+    // =========================================================================
+    // NEXT CUSTOMER ID (C1001, C1002, ...)
+    // =========================================================================
     @Override
     public String nextCustomerId() {
         lock.readLock().lock();
         try {
-            int lastNumber = findAll().stream()
+            int last = findAll().stream()
                     .map(CustomerModel::getId)
-                    .filter(id -> id.startsWith("C"))
+                    .filter(id -> id != null && id.startsWith("C"))
                     .map(id -> id.substring(1))
-                    .filter(s -> s.matches("\\d+"))
+                    .filter(FileCustomerRepository::isNumeric)
                     .mapToInt(Integer::parseInt)
                     .max()
                     .orElse(1000);
 
-            return "C" + (lastNumber + 1);
+            return "C" + (last + 1);
 
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    private CustomerModel parse(String line) {
-        if (line == null || line.isBlank()) return null;
+    // =========================================================================
+    // PARSE LINE → CUSTOMER
+    // =========================================================================
+    private Optional<CustomerModel> parse(String line) {
+        if (line == null || line.isBlank()) return Optional.empty();
 
-        String[] p = line.split("\\|");
-        if (p.length != 3) return null;
+        String[] parts = line.split("\\|", -1);
+        if (parts.length != 3) {
+            LOGGER.log(Level.WARNING, "Skipping corrupted record: {0}", line);
+            return Optional.empty();
+        }
 
-        return new CustomerModel(p[0], p[1], p[2]);
+        return Optional.of(
+                new CustomerModel(
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim()
+                )
+        );
     }
 
+    private String serialize(CustomerModel customer) {
+        return String.format("%s|%s|%s%n",
+                customer.getId(),
+                customer.getPassword(),
+                customer.getEmail());
+    }
+
+    // =========================================================================
+    // FILE SETUP
+    // =========================================================================
     private void ensureFileExists() {
+        if (Files.exists(path)) return;
+
+        lock.writeLock().lock();
         try {
-            if (!Files.exists(path)) Files.createFile(path);
+            Files.createFile(path);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Could not create file", e);
+            LOGGER.log(Level.SEVERE, "Unable to create customer data file", e);
+            throw new IllegalStateException("Unable to create data file", e);
+        } finally {
+            lock.writeLock().unlock();
         }
+    }
+
+    private static boolean isNumeric(String value) {
+        if (value == null || value.isBlank()) return false;
+        for (char c : value.toCharArray()) {
+            if (!Character.isDigit(c)) return false;
+        }
+        return true;
     }
 }

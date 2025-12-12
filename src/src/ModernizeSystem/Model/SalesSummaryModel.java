@@ -25,10 +25,23 @@ public class SalesSummaryModel implements ISalesSummaryService {
     }
 
     @Override
-    public String summarizeSales(String text) {
-        if (text.length() <= 50) return text;
-        return text.substring(0, 50);
+    public String summarizeSales(String title) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(title).append("\n");
+
+        for (int i = 0; i < quantities.length; i++) {
+            Game g = gameList.get(i);
+            sb.append(String.format(
+                    "%s | %.2f | %d%n",
+                    g.getGameName(),
+                    g.getPrice(),
+                    quantities[i]
+            ));
+        }
+
+        return sb.toString();
     }
+
 
     // ==============================
     // Original getQuantity logic

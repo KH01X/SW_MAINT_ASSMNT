@@ -16,7 +16,13 @@ public class SummaryReportView {
             int quantity = model.getQuantities()[i];
             double amount = model.calculateAmount(i);
 
-            System.out.printf("\n%-30s %-20d %.2f%n\n", game.getGameName(), quantity, amount);
+            System.out.printf(
+                    "\n%-30s %-20d %.2f%n\n",
+                    game.getGameName(),
+                    quantity,
+                    game.getPrice()     // ✅ unit price
+            );
+
         }
 
         System.out.println("Total :                                                                      ");

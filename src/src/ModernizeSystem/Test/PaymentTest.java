@@ -158,7 +158,7 @@ public class PaymentTest {
     /**
      * Unit test to verify the decrease() method correctly subtracts an amount from the AccountWallet's balance.
      *
-     */
+=     */
     @Test
     public void testWallet_DecreaseBalance() {
         testWallet.decrease(50.00);
