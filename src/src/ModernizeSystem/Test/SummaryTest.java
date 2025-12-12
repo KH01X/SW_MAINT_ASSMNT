@@ -35,7 +35,7 @@ public class SummaryTest {
         int[] quantities = summaryModel.getQuantities();
         for (int i = 0; i < quantities.length; i++) {
             if (i == 0) quantities[i] = 5;
-            if (i == 1 && i < quantities.length) quantities[i] = 3; // safe guard
+            if (i == 1 && i < quantities.length) quantities[i] = 3;
         }
 
         // Initialize controller and view
@@ -64,11 +64,15 @@ public class SummaryTest {
         for (int i = 0; i < quantities.length; i++) {
             Game g = games.get(i);
             assertTrue(output.contains(g.getGameName()), "Output missing game name: " + g.getGameName());
-            assertTrue(output.contains(String.valueOf(g.getPrice())), "Output missing price for: " + g.getGameName());
+
+            // FIX: Format double to match typical view formatting (2 decimal places)
+            String formattedPrice = String.format("%.2f", g.getPrice());
+            assertTrue(output.contains(formattedPrice), "Output missing price for: " + g.getGameName());
+
+            // Check quantity
             assertTrue(output.contains(String.valueOf(quantities[i])), "Output missing quantity for: " + g.getGameName());
         }
     }
-
 
     @Test
     public void testControllerSummary() {
