@@ -1,6 +1,6 @@
 package ModernizeSystem.Controller;
 
-import ModernizeSystem.Model.Game;
+import ModernizeSystem.Game;
 import ModernizeSystem.Model.SalesSummaryModel;
 import ModernizeSystem.View.SummaryReportView;
 import ModernizeSystem.FileIOService;
