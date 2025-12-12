@@ -7,23 +7,17 @@ import ModernizeSystem.FileIOService;
 
 import java.util.List;
 
+import ModernizeSystem.Model.ISalesSummaryService;
+
 public class SummaryReportController {
 
-    private final SummaryReportView view;
+    private ISalesSummaryService summaryService;
 
-    public SummaryReportController() {
-        this.view = new SummaryReportView();
+    public SummaryReportController(ISalesSummaryService summaryService) {
+        this.summaryService = summaryService;
     }
 
-    public void generateReport(int[] quantities) {
-
-        // Read games from file
-        List<Game> gameList = FileIOService.readGameData();
-
-        // Model
-        SalesSummaryModel model = new SalesSummaryModel(gameList, quantities);
-
-        // Display using view
-        view.displaySummary(model);
+    public String getSummary(String text) {
+        return summaryService.summarizeSales(text);
     }
 }

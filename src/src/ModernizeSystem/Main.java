@@ -149,10 +149,20 @@ public class Main {
                     fileWritingGame();
                     break;
                 case 2:
-                    int[] quantity = getQuantity(0);  // still using your old logic
-                    SummaryReportController controller = new SummaryReportController();
-                    controller.generateReport(quantity);
+                    ArrayList<Game> gameList = filereadingGame(new ArrayList<>());
+
+                    // Pass only the gameList, model will initialize quantities itself
+                    SalesSummaryModel summaryModel = new SalesSummaryModel(gameList);
+
+                    SummaryReportController controller = new SummaryReportController(summaryModel);
+                    String summaryText = controller.getSummary("Sales summary report for today.");
+                    System.out.println("\n" + summaryText + "\n");
+
+                    SummaryReportView view = new SummaryReportView();
+                    view.displaySummary(summaryModel);
+
                     break;
+
                 case 3:
                     ExitProgram();
                     break;
@@ -643,47 +653,6 @@ public class Main {
         } else {
             System.out.println(ErrorMessage.ITEM_NOT_FOUND);
         }
-    }
-
-    // ======================================================
-    //                    SUMMARY REPORT
-    // ======================================================
-    public static void summaryReport(int[] quant) {
-
-        ArrayList<Game> gameList = new ArrayList<>();
-        filereadingGame(gameList);
-
-        System.out.println("                           Welcome to Summary Report!                        ");
-        System.out.println("=============================================================================");
-        System.out.println("Games                         Quantity Sold                            Amount");
-
-        for (int i = 0; i < gameList.size(); i++) {
-            Game game = gameList.get(i);
-            int quantitySold = quant[i];
-            double amount = game.getPrice() * quantitySold;
-
-            System.out.printf("\n%-30s %-20d %.2f%n\n", game.getGameName(), quantitySold, amount);
-        }
-
-        System.out.println("Total :                                                                      ");
-        System.out.println("=============================================================================");
-        System.out.println("                              Have a nice day!                               ");
-    }
-
-    // ======================================================
-    //             GET QUANTITY FOR SUMMARY
-    // ======================================================
-    public static int[] getQuantity(int whichGame) {
-
-        ArrayList<Game> gameList = new ArrayList();
-        filereadingGame(gameList);
-
-        int sizeHolder = gameList.size() - 1;
-        int[] quantity = new int[sizeHolder];
-
-        quantity[whichGame] += 1;
-
-        return quantity;
     }
 
     // ======================================================
