@@ -11,4 +11,3 @@ G1009|Resident Evil Village|163.00|Horror|Experience survival horror like never 
 G1010|Gregs ATD|10.00|Strategy|Yes
 G1011|Phasmophobia|31.00|Horror|Phasmophobia is a 4 player online co-op psychological horror. Paranormal activity is on the rise and it’s up to you and your team to use all the ghost-hunting equipment at your disposal in order to gather as much evidence as you can.
 null|Honolulu|50.00|RPG|honolulu
-null|GTA|10.00|haha|djskjdkjdksjdkjsdj

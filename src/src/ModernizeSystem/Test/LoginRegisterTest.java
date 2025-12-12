@@ -10,126 +10,159 @@ import ModernizeSystem.Service.RegistrationService;
 import ModernizeSystem.Util.ValidationException;
 
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Nested;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.mockito.Mockito.*;
+import java.util.*;
 
 public class LoginRegisterTest {
 
     // ============================================================
     // AUTHENTICATION TESTS
     // ============================================================
-    @Nested
-    class AuthenticationTests {
 
-        @Test
-        void testValidCustomerLogin() {
-            // Mock repos
-            CustomerRepository customerRepo = mock(CustomerRepository.class);
-            StaffRepository staffRepo = mock(StaffRepository.class);
+    @Test
+    void testValidCustomerLogin() {
+        CustomerRepository customerRepo = new FakeCustomerRepo(
+                new CustomerModel("C1000", "pw123", "mail@mail.com")
+        );
+        StaffRepository staffRepo = new FakeStaffRepo();
 
-            // Mock customer data
-            when(customerRepo.findById("C1000"))
-                    .thenReturn(Optional.of(new CustomerModel("C1000", "pw123", "mail@mail.com")));
+        AuthenticationService auth = new AuthenticationService(customerRepo, staffRepo);
 
-            AuthenticationService authService = new AuthenticationService(customerRepo, staffRepo);
+        UserModel user = auth.login("C1000", "pw123");
 
-            // Test
-            UserModel user = authService.login("C1000", "pw123");
+        Assertions.assertEquals("C1000", user.getId());
+    }
 
-            Assertions.assertEquals("C1000", user.getId());
-        }
+    @Test
+    void testInvalidPasswordThrowsException() {
+        CustomerRepository customerRepo = new FakeCustomerRepo(
+                new CustomerModel("C1000", "correctPw", "mail@mail.com")
+        );
+        StaffRepository staffRepo = new FakeStaffRepo();
 
-        @Test
-        void testInvalidPasswordThrowsException() {
-            CustomerRepository customerRepo = mock(CustomerRepository.class);
-            StaffRepository staffRepo = mock(StaffRepository.class);
+        AuthenticationService auth = new AuthenticationService(customerRepo, staffRepo);
 
-            when(customerRepo.findById("C1000"))
-                    .thenReturn(Optional.of(new CustomerModel("C1000", "correctPw", "mail@mail.com")));
+        Assertions.assertThrows(
+                SecurityException.class,
+                () -> auth.login("C1000", "wrongPw")
+        );
+    }
 
-            AuthenticationService authService = new AuthenticationService(customerRepo, staffRepo);
+    @Test
+    void testUnknownCustomerIdThrowsException() {
+        CustomerRepository customerRepo = new FakeCustomerRepo();
+        StaffRepository staffRepo = new FakeStaffRepo();
 
-            Assertions.assertThrows(
-                    SecurityException.class,
-                    () -> authService.login("C1000", "wrongPw")
-            );
-        }
+        AuthenticationService auth = new AuthenticationService(customerRepo, staffRepo);
 
-        @Test
-        void testUnknownCustomerIdThrowsException() {
-            CustomerRepository customerRepo = mock(CustomerRepository.class);
-            StaffRepository staffRepo = mock(StaffRepository.class);
-
-            when(customerRepo.findById("C9999"))
-                    .thenReturn(Optional.empty());
-
-            AuthenticationService authService = new AuthenticationService(customerRepo, staffRepo);
-
-            Assertions.assertThrows(
-                    SecurityException.class,
-                    () -> authService.login("C9999", "anypw")
-            );
-        }
+        Assertions.assertThrows(
+                SecurityException.class,
+                () -> auth.login("C9999", "anypw")
+        );
     }
 
     // ============================================================
     // REGISTRATION TESTS
     // ============================================================
-    @Nested
-    class RegistrationTests {
 
-        @Test
-        void testDuplicateEmailRejectsRegistration() {
-            CustomerRepository repo = mock(CustomerRepository.class);
+    @Test
+    void testDuplicateEmailRejectsRegistration() {
+        CustomerRepository repo = new FakeCustomerRepo(
+                new CustomerModel("C1000", "pw", "x@mail.com")
+        );
 
-            when(repo.findByEmail("x@mail.com"))
-                    .thenReturn(Optional.of(new CustomerModel("C1000", "pw", "x@mail.com")));
+        RegistrationService reg = new RegistrationService(repo);
 
-            RegistrationService reg = new RegistrationService(repo);
+        Assertions.assertThrows(
+                ValidationException.class,
+                () -> reg.register(new RegistrationRequest("a", "a", "x@mail.com"))
+        );
+    }
 
-            Assertions.assertThrows(
-                    ValidationException.class,
-                    () -> reg.register(new RegistrationRequest("a", "a", "x@mail.com"))
-            );
+    @Test
+    void testSuccessfulRegistration() {
+        FakeCustomerRepo repo = new FakeCustomerRepo();
+        repo.setNextId("C2000");
+
+        RegistrationService reg = new RegistrationService(repo);
+
+        var result = reg.register(
+                new RegistrationRequest("pass", "pass", "new@mail.com")
+        );
+
+        Assertions.assertTrue(result.success());
+        Assertions.assertEquals("C2000", result.customer().getId());
+    }
+
+    @Test
+    void testPasswordMismatchThrowsException() {
+        CustomerRepository repo = new FakeCustomerRepo();
+
+        RegistrationService reg = new RegistrationService(repo);
+
+        Assertions.assertThrows(
+                ValidationException.class,
+                () -> reg.register(new RegistrationRequest("abc", "xyz", "user@mail.com"))
+        );
+    }
+
+    // ============================================================
+    // FAKE REPOSITORIES (NO MOCKITO)
+    // ============================================================
+
+    static class FakeCustomerRepo implements CustomerRepository {
+
+        private final List<CustomerModel> customers = new ArrayList<>();
+        private String nextId = "C1001";
+
+        FakeCustomerRepo(CustomerModel... initial) {
+            customers.addAll(Arrays.asList(initial));
         }
 
-        @Test
-        void testSuccessfulRegistration() {
-            CustomerRepository repo = mock(CustomerRepository.class);
-
-            when(repo.findByEmail("new@mail.com"))
-                    .thenReturn(Optional.empty());
-
-            when(repo.nextCustomerId())
-                    .thenReturn("C2000");
-
-            when(repo.save(any(CustomerModel.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
-
-            RegistrationService reg = new RegistrationService(repo);
-
-            var result = reg.register(
-                    new RegistrationRequest("pass", "pass", "new@mail.com")
-            );
-
-            Assertions.assertTrue(result.success());
-            Assertions.assertEquals("C2000", result.customer().getId());
+        void setNextId(String id) {
+            this.nextId = id;
         }
 
-        @Test
-        void testPasswordMismatchThrowsException() {
-            CustomerRepository repo = mock(CustomerRepository.class);
+        @Override
+        public List<CustomerModel> findAll() {
+            return customers;
+        }
 
-            RegistrationService reg = new RegistrationService(repo);
+        @Override
+        public Optional<CustomerModel> findById(String id) {
+            return customers.stream()
+                    .filter(c -> c.getId().equals(id))
+                    .findFirst();
+        }
 
-            Assertions.assertThrows(
-                    ValidationException.class,
-                    () -> reg.register(new RegistrationRequest("abc", "xyz", "user@mail.com"))
-            );
+        @Override
+        public Optional<CustomerModel> findByEmail(String email) {
+            return customers.stream()
+                    .filter(c -> c.getEmail().equalsIgnoreCase(email))
+                    .findFirst();
+        }
+
+        @Override
+        public CustomerModel save(CustomerModel customer) {
+            customers.add(customer);
+            return customer;
+        }
+
+        @Override
+        public String nextCustomerId() {
+            return nextId;
+        }
+    }
+
+    static class FakeStaffRepo implements StaffRepository {
+        @Override
+        public List findAll() {
+            return List.of();
+        }
+
+        @Override
+        public Optional findById(String id) {
+            return Optional.empty();
         }
     }
 }
