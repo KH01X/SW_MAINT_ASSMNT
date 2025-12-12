@@ -199,9 +199,6 @@ public class Main {
     // ======================================================
     //          GAME SELECTION + ADD TO CART
     // ======================================================
-    // ======================================================
-    //          GAME SELECTION + ADD TO CART (FINAL FIX)
-    // ======================================================
     public static double gameSelection(
             ArrayList<Game> gameList,
             ArrayList<Cart> cartList,
