@@ -2,6 +2,9 @@
 <module version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
+    <content url="file://$USER_HOME$/Documents/GitHub/SW_MAINT_ASSMNT/src/src/ModernizeSystem">
+      <sourceFolder url="file://$USER_HOME$/Documents/GitHub/SW_MAINT_ASSMNT/src/src/ModernizeSystem" isTestSource="false" packagePrefix="ModernizeSystem" />
+    </content>
     <orderEntry type="jdk" jdkName="openjdk-25" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

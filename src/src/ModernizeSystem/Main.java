@@ -1,8 +1,8 @@
 package ModernizeSystem;
 
-import ModernizeSystem.Controller.ConsoleAuthController;
+import ModernizeSystem.Controller.*;
 import ModernizeSystem.Model.*;
-import ModernizeSystem.View.PaymentView;
+import ModernizeSystem.View.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
