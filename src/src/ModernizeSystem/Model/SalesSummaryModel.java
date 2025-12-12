@@ -36,15 +36,12 @@ public class SalesSummaryModel implements ISalesSummaryService {
     // Original getQuantity logic
     // ==============================
     private int[] initializeQuantities() {
-        // NOTE: originally, size = gameList.size() - 1; kept here
-        int sizeHolder = gameList.size() - 1;
-        int[] quantity = new int[sizeHolder];
-
-        // Example: increment first game for demo
-        if (sizeHolder > 0) {
+        int[] quantity = new int[gameList.size()]; // match number of games
+        // Example: optionally increment first game for demo
+        if (gameList.size() > 0) {
             quantity[0] += 1;
         }
-
         return quantity;
     }
+
 }
