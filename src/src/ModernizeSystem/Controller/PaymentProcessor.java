@@ -1,6 +1,6 @@
 package ModernizeSystem.Controller;
 
-import ModernizeSystem.Cart;
+import ModernizeSystem.Model.Cart;
 import ModernizeSystem.Model.AccountWallet;
 import ModernizeSystem.Model.Credit;
 import ModernizeSystem.Model.Order;

@@ -1,6 +1,6 @@
 package ModernizeSystem.View;
 
-import ModernizeSystem.Game;
+import ModernizeSystem.Model.Game;
 import ModernizeSystem.Model.SalesSummaryModel;
 
 public class SummaryReportView {

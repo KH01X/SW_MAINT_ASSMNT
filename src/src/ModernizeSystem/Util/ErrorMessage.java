@@ -1,4 +1,4 @@
-package ModernizeSystem;
+package ModernizeSystem.Util;
 
 /**
  * Class containing system-wide error and status messages as final constants.

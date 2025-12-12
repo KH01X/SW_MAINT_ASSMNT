@@ -1,12 +1,5 @@
 package ModernizeSystem.Controller;
 
-import ModernizeSystem.Game;
-import ModernizeSystem.Model.SalesSummaryModel;
-import ModernizeSystem.View.SummaryReportView;
-import ModernizeSystem.FileIOService;
-
-import java.util.List;
-
 import ModernizeSystem.Model.ISalesSummaryService;
 
 public class SummaryReportController {

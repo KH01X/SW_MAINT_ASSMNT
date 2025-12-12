@@ -1,7 +1,9 @@
-package ModernizeSystem;
+package ModernizeSystem.Service;
+
+import ModernizeSystem.Model.Cart;
+import ModernizeSystem.Model.Game;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service responsible for managing the state and business logic of the Shopping Cart

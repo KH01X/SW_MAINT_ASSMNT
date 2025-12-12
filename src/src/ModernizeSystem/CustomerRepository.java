@@ -1,5 +1,7 @@
 package ModernizeSystem;
 
+import ModernizeSystem.Model.Customer;
+
 import java.util.List;
 import java.util.Optional;
 

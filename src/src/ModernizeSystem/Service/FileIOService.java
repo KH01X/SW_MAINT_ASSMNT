@@ -1,4 +1,7 @@
-package ModernizeSystem;
+package ModernizeSystem.Service;
+
+import ModernizeSystem.Model.Customer;
+import ModernizeSystem.Model.Game;
 
 import java.io.File;
 import java.io.FileNotFoundException;

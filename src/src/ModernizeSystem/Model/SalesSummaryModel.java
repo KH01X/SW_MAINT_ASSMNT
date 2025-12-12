@@ -1,8 +1,6 @@
 package ModernizeSystem.Model;
 
-import java.util.ArrayList;
 import java.util.List;
-import ModernizeSystem.Game;
 
 public class SalesSummaryModel implements ISalesSummaryService {
 

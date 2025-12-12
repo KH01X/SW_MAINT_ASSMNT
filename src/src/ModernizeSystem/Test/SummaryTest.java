@@ -3,7 +3,7 @@ package ModernizeSystem.Test;
 import ModernizeSystem.Model.SalesSummaryModel;
 import ModernizeSystem.Controller.SummaryReportController;
 import ModernizeSystem.View.SummaryReportView;
-import ModernizeSystem.Game;
+import ModernizeSystem.Model.Game;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

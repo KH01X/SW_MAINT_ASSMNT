@@ -2,16 +2,21 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package ModernizeSystem;
+package ModernizeSystem.Model;
 
 /**
  *
  * @author Bruh
  */
-public class Staff extends User {
+public class Customer extends User {
     //Constructor
-    public Staff(String userID, String userPw, String userEmail)
+    public Customer(){
+        
+    }
+    
+    public Customer(String userID, String userPw, String userEmail)
     {
         super(userID, userPw, userEmail);
     }
 }
+
