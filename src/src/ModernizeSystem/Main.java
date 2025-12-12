@@ -5,6 +5,7 @@ import ModernizeSystem.Model.*;
 import ModernizeSystem.Service.CartService;
 import ModernizeSystem.Service.FileIOService;
 import ModernizeSystem.Service.GameService;
+import ModernizeSystem.Service.ReviewService;
 import ModernizeSystem.View.*;
 
 import java.io.File;
@@ -21,6 +22,7 @@ public class Main {
     private static final GameService gameService = new GameService();
     private static final CartService cartService = new CartService();
     private static final PaymentView paymentView = new PaymentView(cartService);
+    private static final ReviewService reviewService = new ReviewService();
 
     public static void main(String[] args) {
         titleScreen();
@@ -197,34 +199,127 @@ public class Main {
     // ======================================================
     //          GAME SELECTION + ADD TO CART
     // ======================================================
+    // ======================================================
+    //          GAME SELECTION + ADD TO CART (FINAL FIX)
+    // ======================================================
     public static double gameSelection(
             ArrayList<Game> gameList,
             ArrayList<Cart> cartList,
             AccountWallet wallet,
-            Credit card) {
+            Credit card) { // Card and Wallet are passed for potential future expansion
 
         Scanner sc = new Scanner(System.in);
+        int option = 0;
+        char proceed;
+        Game selectedGame = null;
 
-        while (true) {
+        do {
+
+            System.out.print("""
+                          
+                          
+                          ==============================================================
+                             ====    ==   == = ==  ====    == = ==  ====  ==  =  =   =
+                            =       =  =  =======  =       =======  =     === =  =   =
+                            =  ===  ====  =  =  =  ====    =  =  =  ====  = ===  =   =
+                            =   =   =  =  =  =  =  =       =  =  =  =     =   =  =   =
+                             ====   =  =  =  =  =  ====    =  =  =  ====  =   =   ===
+                          ==============================================================
+                          """);
 
             menucontent(gameList);
 
-            System.out.print("0) Back\nSelect game > ");
+            System.out.print("\n0) Back\nSelect game > ");
 
-            int choice;
-            try {
-                choice = sc.nextInt();
-                if (choice == 0) return cartService.calculateSubTotal(cartList);
+            boolean inputValid = false;
+            while (!inputValid) {
+                try {
+                    option = sc.nextInt();
+                    sc.nextLine(); // Consume newline
 
-                Game selected = gameService.getSelectedGame(gameList, choice);
-                cartService.addItemToCart(cartList, selected);
-                System.out.println("Added to cart!");
+                    // Exit back to main menu
+                    if (option == 0) return cartService.calculateSubTotal(cartList);
 
-            } catch (Exception e) {
-                sc.nextLine();
-                System.out.println("Invalid choice!");
+                    // Delegation: Use GameService to retrieve the game (SRP)
+                    selectedGame = gameService.getSelectedGame(gameList, option);
+                    inputValid = true;
+
+                } catch (IndexOutOfBoundsException e) {
+                    LOGGER.log(Level.WARNING, "User entered invalid game index: " + option);
+                    System.out.println("Invalid Option! Please select a number from the list.");
+                    sc.nextLine(); // Clear scanner buffer if needed
+                } catch (InputMismatchException e) {
+                    System.out.println("Invalid Option! Only Enter number!");
+                    sc.nextLine(); // Clear scanner buffer
+                }
             }
-        }
+
+            // --- Display Game Details ---
+            System.out.printf("""
+                    =================================================================
+                         Game Name  : %s
+                         Game Price : %.2f
+                         Game Genre : %s
+                        ______________________________
+                         Game Description
+                        ------------------------------ 
+                    
+                    """, selectedGame.getGameName(), selectedGame.getPrice(), selectedGame.getGenre());
+
+            // Assuming formatGameDesc handles wrapping
+            // formatGameDesc(selectedGame.getGameDesc(), 40);
+            System.out.println(selectedGame.getGameDesc()); // Simplified display for brevity
+            System.out.println("=================================================================");
+
+            // --- Options Segment ---
+            System.out.print("""
+            [1] Add to Cart     [2] Reviews     [3] Back to Games   
+            Please Enter An Option (1-3):  """);
+
+            int actionChoice;
+            try {
+                actionChoice = sc.nextInt();
+            } catch (InputMismatchException e) {
+                actionChoice = -1;
+                sc.nextLine();
+            }
+
+            switch (actionChoice) {
+                case 1 -> {
+                    // Delegation: Use CartService to add item (SRP)
+                    cartService.addItemToCart(cartList, selectedGame);
+                    System.out.println("\n[Successfully added " + selectedGame.getGameName() + " to cart.]\n");
+                }
+                case 2 -> {
+                    // FIX APPLIED HERE: Call the method on the static instance
+                    System.out.println("\n  Showing recent reviews:\n  -------------------------");
+
+                    // Use the instance 'reviewService' instead of the class name 'ReviewService'
+                    List<Review> currentReviews = reviewService.getReviewsForGame(selectedGame.getGameID());
+
+                    if (currentReviews.isEmpty()) {
+                        System.out.println("  No reviews found for " + selectedGame.getGameName());
+                    } else {
+                        // Display results from the Model layer
+                        for (Review review : currentReviews) {
+                            System.out.println(review.displayReview());
+                        }
+                    }
+                }
+                case 3 -> {
+                    // Back to list
+                }
+                default -> System.out.println("Invalid action. Returning to game list.");
+            }
+
+            System.out.print("\n Continue Looking For Games? (Y/N) > ");
+            proceed = sc.next().charAt(0);
+            sc.nextLine();
+
+        } while (Character.toUpperCase(proceed) == 'Y');
+
+        // Final subtotal calculation before exiting the menu
+        return cartService.calculateSubTotal(cartList);
     }
 
     // ======================================================
